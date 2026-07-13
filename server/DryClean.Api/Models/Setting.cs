@@ -50,4 +50,10 @@ public static class SettingKeys
     public const string TwilioAuthToken = "TwilioAuthToken";
     public const string TwilioWhatsAppFrom = "TwilioWhatsAppFrom";
     public const string TwilioSmsFrom = "TwilioSmsFrom";
+    public const string SmtpHost = "SmtpHost";
+    public const string SmtpPort = "SmtpPort";
+    public const string SmtpUsername = "SmtpUsername";
+    public const string SmtpPassword = "SmtpPassword";
+    public const string SmtpFromEmail = "SmtpFromEmail";
+    public const string SmtpFromName = "SmtpFromName";
 }

@@ -13,7 +13,13 @@ public record ApiKeysDto(
     string TwilioAccountSid,
     string TwilioAuthToken,
     string TwilioWhatsAppFrom,
-    string TwilioSmsFrom);
+    string TwilioSmsFrom,
+    string SmtpHost,
+    string SmtpPort,
+    string SmtpUsername,
+    string SmtpPassword,
+    string SmtpFromEmail,
+    string SmtpFromName);
 
 /// <summary>GET response: <c>Values</c> is what's actually stored (edit this),
 /// <c>Defaults</c> is what's currently in effect from appsettings.json/env when
@@ -30,4 +36,10 @@ public record UpdateApiKeysDto(
     string? TwilioAccountSid,
     string? TwilioAuthToken,
     string? TwilioWhatsAppFrom,
-    string? TwilioSmsFrom);
+    string? TwilioSmsFrom,
+    string? SmtpHost,
+    string? SmtpPort,
+    string? SmtpUsername,
+    string? SmtpPassword,
+    string? SmtpFromEmail,
+    string? SmtpFromName);

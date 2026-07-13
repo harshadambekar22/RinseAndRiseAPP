@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using DryClean.Api.Data;
 using DryClean.Api.Dtos;
 using DryClean.Api.Models;
@@ -11,17 +12,24 @@ public interface IAuthService
     Task<AuthResponseDto> RegisterAsync(RegisterDto dto);
     Task<AuthResponseDto?> LoginAsync(LoginDto dto);
     Task<AuthResponseDto> GoogleLoginAsync(GoogleLoginDto dto);
+    Task ForgotPasswordAsync(ForgotPasswordDto dto);
+    Task<bool> VerifyResetCodeAsync(VerifyResetCodeDto dto);
+    Task ResetPasswordAsync(ResetPasswordDto dto);
 }
 
 public class AuthService : IAuthService
 {
+    private const int ResetCodeExpiryMinutes = 10;
+    private const int MaxResetAttempts = 5;
+
     private readonly AppDbContext _db;
     private readonly ITokenService _tokens;
     private readonly ISettingsService _settings;
+    private readonly IEmailService _email;
 
-    public AuthService(AppDbContext db, ITokenService tokens, ISettingsService settings)
+    public AuthService(AppDbContext db, ITokenService tokens, ISettingsService settings, IEmailService email)
     {
-        _db = db; _tokens = tokens; _settings = settings;
+        _db = db; _tokens = tokens; _settings = settings; _email = email;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -92,6 +100,67 @@ public class AuthService : IAuthService
 
         await _db.SaveChangesAsync();
         return ToResponse(user);
+    }
+
+    public async Task ForgotPasswordAsync(ForgotPasswordDto dto)
+    {
+        var email = dto.Email.Trim().ToLowerInvariant();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        // Don't reveal whether the account exists — always no-op silently for
+        // an unknown email so the response can't be used to enumerate users.
+        if (user is null) return;
+
+        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        user.PasswordResetCodeHash = PasswordHasher.Hash(code);
+        user.PasswordResetExpiresAt = DateTime.UtcNow.AddMinutes(ResetCodeExpiryMinutes);
+        user.PasswordResetAttempts = 0;
+        await _db.SaveChangesAsync();
+
+        await _email.SendPasswordResetCodeAsync(user.Email, user.Name, code);
+    }
+
+    public async Task<bool> VerifyResetCodeAsync(VerifyResetCodeDto dto) =>
+        await CheckResetCodeAsync(dto.Email, dto.Code) is not null;
+
+    public async Task ResetPasswordAsync(ResetPasswordDto dto)
+    {
+        var user = await CheckResetCodeAsync(dto.Email, dto.Code)
+            ?? throw new InvalidOperationException("That code is invalid or has expired. Request a new one.");
+
+        user.PasswordHash = PasswordHasher.Hash(dto.NewPassword);
+        user.PasswordResetCodeHash = null;
+        user.PasswordResetExpiresAt = null;
+        user.PasswordResetAttempts = 0;
+        await _db.SaveChangesAsync();
+    }
+
+    /// <summary>Validates the code against the stored hash, expiry, and attempt
+    /// limit; increments the attempt counter on a miss. Returns the user on
+    /// success, null otherwise — never throws, so callers decide how to report it.</summary>
+    private async Task<User?> CheckResetCodeAsync(string email, string code)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        if (user?.PasswordResetCodeHash is null || user.PasswordResetExpiresAt is null) return null;
+
+        if (user.PasswordResetExpiresAt < DateTime.UtcNow || user.PasswordResetAttempts >= MaxResetAttempts)
+        {
+            // Expired or brute-forced past the attempt limit — invalidate so a
+            // stale/guessed code can't be retried indefinitely.
+            user.PasswordResetCodeHash = null;
+            user.PasswordResetExpiresAt = null;
+            await _db.SaveChangesAsync();
+            return null;
+        }
+
+        if (!PasswordHasher.Verify(code, user.PasswordResetCodeHash))
+        {
+            user.PasswordResetAttempts++;
+            await _db.SaveChangesAsync();
+            return null;
+        }
+
+        return user;
     }
 
     private AuthResponseDto ToResponse(User u) =>

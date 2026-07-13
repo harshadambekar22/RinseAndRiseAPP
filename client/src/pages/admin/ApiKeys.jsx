@@ -32,6 +32,18 @@ const SECTIONS = [
       { key: 'twilioSmsFrom', label: 'SMS from', placeholder: '+1XXXXXXXXXX', secret: false },
     ],
   },
+  {
+    title: 'Email (SMTP)',
+    description: 'Sends "forgot password" verification codes to customers. Without a host + credentials, codes are just logged.',
+    fields: [
+      { key: 'smtpHost', label: 'SMTP host', placeholder: 'smtp.yourprovider.com', secret: false },
+      { key: 'smtpPort', label: 'SMTP port', placeholder: '587', secret: false },
+      { key: 'smtpUsername', label: 'Username', placeholder: 'you@yourdomain.com', secret: false },
+      { key: 'smtpPassword', label: 'Password', placeholder: '••••••••', secret: true },
+      { key: 'smtpFromEmail', label: 'From address', placeholder: 'no-reply@yourdomain.com', secret: false },
+      { key: 'smtpFromName', label: 'From name', placeholder: 'Fresh & Fold', secret: false },
+    ],
+  },
 ]
 
 export default function ApiKeys() {

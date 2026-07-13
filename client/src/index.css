@@ -402,6 +402,10 @@ td.num { font-variant-numeric: tabular-nums; }
 .google-wrap { display: flex; justify-content: center; }
 .divider-or { display: flex; align-items: center; text-align: center; gap: 12px; color: var(--ink-soft); margin: 18px 0; font-size: .82rem; }
 .divider-or::before, .divider-or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.code-input { text-align: center; letter-spacing: .5em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.3rem; font-weight: 700; }
+.link-btn { background: none; border: none; padding: 0; cursor: pointer; color: var(--primary-deep); font-weight: 600; font-size: inherit; font-family: inherit; }
+.link-btn:hover { text-decoration: underline; }
+.link-btn:disabled { color: var(--ink-soft); cursor: not-allowed; text-decoration: none; }
 
 /* ---- Alerts ---- */
 .alert-error { background: var(--danger-wash); border: 1px solid var(--danger-line); color: var(--danger-text); padding: 10px 14px; border-radius: 12px; font-size: .88rem; margin-bottom: 14px; }
