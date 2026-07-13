@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using DryClean.Api.Data;
 using DryClean.Api.Dtos;
 using DryClean.Api.Models;
@@ -56,13 +57,54 @@ public class AdminController : ControllerBase
     [HttpGet("users")]
     public async Task<ActionResult<List<UserViewDto>>> Users()
     {
+        // Enum.ToString() inside a server-side projection can't be translated by the
+        // Sqlite provider, so keep the projection to plain columns and build the DTO
+        // (with its ToString() call) client-side after materializing.
         var users = await _db.Users
-            .Select(u => new UserViewDto(
-                u.Id, u.Name, u.Email, u.Phone, u.Role.ToString(), u.CreatedAt,
-                _db.Orders.Count(o => o.UserId == u.Id)))
             .OrderByDescending(u => u.CreatedAt)
+            .Select(u => new
+            {
+                u.Id, u.Name, u.Email, u.Phone, u.Role, u.CreatedAt,
+                OrderCount = _db.Orders.Count(o => o.UserId == u.Id)
+            })
             .ToListAsync();
-        return Ok(users);
+
+        return Ok(users.Select(u => new UserViewDto(
+            u.Id, u.Name, u.Email, u.Phone, u.Role.ToString(), u.CreatedAt, u.OrderCount)).ToList());
+    }
+
+    /// <summary>Promote a customer to Admin, giving them full dashboard access.</summary>
+    [HttpPost("users/{id:int}/make-admin")]
+    public async Task<ActionResult<UserViewDto>> MakeAdmin(int id)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+
+        user.Role = UserRole.Admin;
+        await _db.SaveChangesAsync();
+
+        var orderCount = await _db.Orders.CountAsync(o => o.UserId == user.Id);
+        return Ok(new UserViewDto(user.Id, user.Name, user.Email, user.Phone, user.Role.ToString(), user.CreatedAt, orderCount));
+    }
+
+    /// <summary>Delete a customer account. Blocked for the caller's own account, and for
+    /// anyone with order history (deleting them would orphan or destroy billing records).</summary>
+    [HttpDelete("users/{id:int}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (id == currentUserId)
+            return BadRequest(new { message = "You can't delete your own account." });
+
+        var user = await _db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+
+        if (await _db.Orders.AnyAsync(o => o.UserId == id))
+            return BadRequest(new { message = "This customer has order history and can't be deleted." });
+
+        _db.Users.Remove(user);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     /// <summary>Counter billing: build an invoice for a walk-in customer,
