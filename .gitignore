@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+# Database (SQLite is created at runtime)
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+# Uploaded images (runtime content, not source)
+server/DryClean.Api/wwwroot/uploads/*
+!server/DryClean.Api/wwwroot/uploads/.gitkeep
+# Node / Vite
+node_modules/
+client/dist/
+# Env & secrets
+.env
+.env.local
+appsettings.*.local.json
+# OS / editor
+.DS_Store
+.vs/
+.idea/
+.vscode/
+.claude/
