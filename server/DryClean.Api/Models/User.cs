@@ -26,6 +26,17 @@ public class User
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>PBKDF2 hash (same format as PasswordHash) of the current
+    /// "forgot password" one-time code, if a reset is in progress.</summary>
+    [MaxLength(160)]
+    public string? PasswordResetCodeHash { get; set; }
+
+    public DateTime? PasswordResetExpiresAt { get; set; }
+
+    /// <summary>Failed verify attempts against the current code. The code is
+    /// invalidated once this hits the limit, forcing a fresh one.</summary>
+    public int PasswordResetAttempts { get; set; }
+
     public List<Address> Addresses { get; set; } = new();
     public List<Order> Orders { get; set; } = new();
 }

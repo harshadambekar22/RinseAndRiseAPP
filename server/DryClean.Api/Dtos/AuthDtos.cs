@@ -21,3 +21,14 @@ public record AuthResponseDto(
     string Name,
     string Email,
     string Role);
+
+public record ForgotPasswordDto([Required, EmailAddress] string Email);
+
+public record VerifyResetCodeDto(
+    [Required, EmailAddress] string Email,
+    [Required, StringLength(6, MinimumLength = 6)] string Code);
+
+public record ResetPasswordDto(
+    [Required, EmailAddress] string Email,
+    [Required, StringLength(6, MinimumLength = 6)] string Code,
+    [Required, MinLength(6)] string NewPassword);

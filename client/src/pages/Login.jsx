@@ -56,6 +56,11 @@ export default function Login() {
         <h1>Welcome back</h1>
         <p className="muted">Sign in to schedule pickups and track your orders.</p>
 
+        {location.state?.resetSuccess && (
+          <div className="alert-success" style={{ marginBottom: 14 }}>
+            Password updated. Sign in with your new password.
+          </div>
+        )}
         {error && <div className="alert-error" role="alert">{error}</div>}
 
         <form onSubmit={submit} className="stack-sm">
@@ -65,7 +70,10 @@ export default function Login() {
               value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
           </div>
           <div className="field">
-            <label>Password</label>
+            <div className="between" style={{ alignItems: 'baseline', marginBottom: 6 }}>
+              <label style={{ marginBottom: 0 }}>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '.8rem' }}>Forgot password?</Link>
+            </div>
             <input className="input" type="password" required autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>

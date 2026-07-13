@@ -34,6 +34,12 @@ public class AdminApiKeysController : ControllerBase
         if (dto.TwilioAuthToken is not null) await _settings.SetAsync(SettingKeys.TwilioAuthToken, dto.TwilioAuthToken);
         if (dto.TwilioWhatsAppFrom is not null) await _settings.SetAsync(SettingKeys.TwilioWhatsAppFrom, dto.TwilioWhatsAppFrom);
         if (dto.TwilioSmsFrom is not null) await _settings.SetAsync(SettingKeys.TwilioSmsFrom, dto.TwilioSmsFrom);
+        if (dto.SmtpHost is not null) await _settings.SetAsync(SettingKeys.SmtpHost, dto.SmtpHost);
+        if (dto.SmtpPort is not null) await _settings.SetAsync(SettingKeys.SmtpPort, dto.SmtpPort);
+        if (dto.SmtpUsername is not null) await _settings.SetAsync(SettingKeys.SmtpUsername, dto.SmtpUsername);
+        if (dto.SmtpPassword is not null) await _settings.SetAsync(SettingKeys.SmtpPassword, dto.SmtpPassword);
+        if (dto.SmtpFromEmail is not null) await _settings.SetAsync(SettingKeys.SmtpFromEmail, dto.SmtpFromEmail);
+        if (dto.SmtpFromName is not null) await _settings.SetAsync(SettingKeys.SmtpFromName, dto.SmtpFromName);
         return Ok(await BuildResponse());
     }
 
@@ -51,7 +57,13 @@ public class AdminApiKeysController : ControllerBase
             await _settings.GetAsync(SettingKeys.TwilioAccountSid) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.TwilioAuthToken) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.TwilioWhatsAppFrom) ?? string.Empty,
-            await _settings.GetAsync(SettingKeys.TwilioSmsFrom) ?? string.Empty);
+            await _settings.GetAsync(SettingKeys.TwilioSmsFrom) ?? string.Empty,
+            await _settings.GetAsync(SettingKeys.SmtpHost) ?? string.Empty,
+            await _settings.GetAsync(SettingKeys.SmtpPort) ?? string.Empty,
+            await _settings.GetAsync(SettingKeys.SmtpUsername) ?? string.Empty,
+            await _settings.GetAsync(SettingKeys.SmtpPassword) ?? string.Empty,
+            await _settings.GetAsync(SettingKeys.SmtpFromEmail) ?? string.Empty,
+            await _settings.GetAsync(SettingKeys.SmtpFromName) ?? string.Empty);
 
         // What's actually in effect right now (falls back to appsettings.json)
         // — display-only, so the admin can see a key already works via config
@@ -64,7 +76,13 @@ public class AdminApiKeysController : ControllerBase
             await _settings.GetOrConfigAsync(SettingKeys.TwilioAccountSid, "Notifications:Twilio:AccountSid"),
             await _settings.GetOrConfigAsync(SettingKeys.TwilioAuthToken, "Notifications:Twilio:AuthToken"),
             await _settings.GetOrConfigAsync(SettingKeys.TwilioWhatsAppFrom, "Notifications:Twilio:WhatsAppFrom"),
-            await _settings.GetOrConfigAsync(SettingKeys.TwilioSmsFrom, "Notifications:Twilio:SmsFrom"));
+            await _settings.GetOrConfigAsync(SettingKeys.TwilioSmsFrom, "Notifications:Twilio:SmsFrom"),
+            await _settings.GetOrConfigAsync(SettingKeys.SmtpHost, "Email:SmtpHost"),
+            await _settings.GetOrConfigAsync(SettingKeys.SmtpPort, "Email:SmtpPort"),
+            await _settings.GetOrConfigAsync(SettingKeys.SmtpUsername, "Email:SmtpUsername"),
+            await _settings.GetOrConfigAsync(SettingKeys.SmtpPassword, "Email:SmtpPassword"),
+            await _settings.GetOrConfigAsync(SettingKeys.SmtpFromEmail, "Email:SmtpFromEmail"),
+            await _settings.GetOrConfigAsync(SettingKeys.SmtpFromName, "Email:SmtpFromName"));
 
         return new ApiKeysResponseDto(values, defaults);
     }
