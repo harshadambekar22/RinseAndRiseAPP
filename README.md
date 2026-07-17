@@ -10,7 +10,7 @@ counter billing that sends the bill to the customer's WhatsApp).
 - **Database:** SQLite (a single local file — no database server to install or run),
   schema managed with EF Core migrations
 - **Payments:** Razorpay (UPI / QR / card / net-banking)
-- **Maps:** Google Maps (pickup location)
+- **Maps:** OpenStreetMap via Leaflet (pickup location) — no API key required
 - **Sign-in:** Email + password, and Google Sign-In
 - **Notifications:** WhatsApp bill delivery via Twilio, with SMS fallback
 
@@ -85,8 +85,10 @@ Everything is wired to **degrade gracefully** so you can demo the whole flow imm
 |---------|--------------|-----------|
 | Razorpay payment | Returns a **mock** order and marks it paid so you can see the success + tracking screens | Opens the real Razorpay checkout (UPI/QR/card) |
 | Google Sign-In | Button is **hidden** | "Sign in with Google" appears |
-| Google Maps (pickup) | Falls back to **manual address entry** | Interactive draggable-pin map |
 | WhatsApp / SMS bill | **Logged to the API console** | Delivered via Twilio |
+
+The pickup-location map (OpenStreetMap tiles + Nominatim reverse-geocoding) always works —
+no keys needed for it at all.
 
 So you can clone, run, and click through end-to-end before signing up for anything.
 
@@ -110,9 +112,8 @@ Frontend keys live in **`client/.env`** (copy `client/.env.example` → `client/
 5. **Going live** needs business KYC verification on Razorpay (PAN, bank account, etc.).
    That approval is done on Razorpay's side and can take a few days — plan for it.
 
-### 4b. Google Sign-In + Google Maps
-Both come from a **Google Cloud** project with billing enabled
-(https://console.cloud.google.com).
+### 4b. Google Sign-In
+Comes from a **Google Cloud** project with billing enabled (https://console.cloud.google.com).
 
 - **Sign-In (OAuth):** APIs & Services → Credentials → *Create OAuth client ID* →
   *Web application*. Add `http://localhost:5173` to **Authorized JavaScript origins**.
@@ -120,8 +121,9 @@ Both come from a **Google Cloud** project with billing enabled
   - `client/.env` → `VITE_GOOGLE_CLIENT_ID=...`
   - `appsettings.json` → `"Google": { "ClientId": "...same id..." }` (the backend uses it
     to verify the token).
-- **Maps:** APIs & Services → enable **Maps JavaScript API** → create an **API key** →
-  restrict it to your domains. Copy into `client/.env` → `VITE_GOOGLE_MAPS_API_KEY=...`.
+
+The pickup-location map runs on OpenStreetMap tiles + Nominatim reverse-geocoding
+(`client/src/pages/Schedule.jsx`) — both free public services, no account or API key needed.
 
 ### 4c. WhatsApp bill delivery (Twilio)
 The simplest route for development is the **Twilio WhatsApp Sandbox**:
@@ -219,7 +221,7 @@ Server).
 - Admin dashboard summary, transactions list, customer list
 - Counter billing → invoice → WhatsApp/SMS send (with console fallback)
 - Admin-editable prices/catalogue, theme colors, contact details, and third-party API keys
-  (Google Maps/Sign-In, Razorpay, Twilio) — see §10, all take effect without a redeploy
+  (Google Sign-In, Razorpay, Twilio) — see §10, all take effect without a redeploy
 - Responsive layout for mobile / tablet / laptop
 
 **Deliberately simple (extend for production)**
@@ -295,8 +297,8 @@ with a `Dockerfile`, which Railway auto-detects — no Nixpacks config needed.
 **Client service** — Root Directory: `client`
 1. New Service → same repo → Root Directory `client`.
 2. Build-time variable: `VITE_API_BASE_URL` = the API service's public URL from above.
-   (`VITE_GOOGLE_CLIENT_ID` / `VITE_GOOGLE_MAPS_API_KEY` are optional build args — skip
-   them and set those from Admin → API Keys after deploy instead.)
+   (`VITE_GOOGLE_CLIENT_ID` is an optional build arg — skip it and set it from
+   Admin → API Keys after deploy instead. The map needs no build-time variable at all.)
 3. Deploy, note its public URL, and set it as `CORS_ALLOWED_ORIGINS` on the API service
    (step 3 above), then redeploy the API service so the new origin takes effect.
 4. Add both services' domains to Google OAuth's Authorized JavaScript origins and to
@@ -398,7 +400,7 @@ existing **business phone** (the "call to book" number) is editable from here to
 the rest of the contact card.
 
 ### API keys (Admin → API Keys)
-Google Maps, Google Sign-In, Razorpay, and Twilio credentials can be set from the admin UI
+Google Sign-In, Razorpay, and Twilio credentials can be set from the admin UI
 instead of (or in addition to) `appsettings.json`/`client/.env` — changes apply immediately,
 no redeploy. A key saved here always wins; leaving a field blank keeps using whatever's in
 `appsettings.json`/env config (shown as a hint under the field). This is what makes the

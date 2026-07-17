@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DryClean.Api.Controllers;
 
-/// <summary>Admin-only: view/update third-party API keys (Google Maps, Google
-/// OAuth, Razorpay, Twilio). These live in the same Settings key/value table
+/// <summary>Admin-only: view/update third-party API keys (Google OAuth,
+/// Razorpay, Twilio). These live in the same Settings key/value table
 /// as everything else on the Features page, so saving here takes effect
 /// immediately (no redeploy) — RazorpayService, AuthService, and
 /// NotificationService all check the Settings table first and fall back to
@@ -26,7 +26,6 @@ public class AdminApiKeysController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> Update(UpdateApiKeysDto dto)
     {
-        if (dto.GoogleMapsApiKey is not null) await _settings.SetAsync(SettingKeys.GoogleMapsApiKey, dto.GoogleMapsApiKey);
         if (dto.GoogleClientId is not null) await _settings.SetAsync(SettingKeys.GoogleClientId, dto.GoogleClientId);
         if (dto.RazorpayKeyId is not null) await _settings.SetAsync(SettingKeys.RazorpayKeyId, dto.RazorpayKeyId);
         if (dto.RazorpayKeySecret is not null) await _settings.SetAsync(SettingKeys.RazorpayKeySecret, dto.RazorpayKeySecret);
@@ -50,7 +49,6 @@ public class AdminApiKeysController : ControllerBase
         // clicking Save with an untouched field silently bakes appsettings'
         // current value into the DB as a permanent override.
         var values = new ApiKeysDto(
-            await _settings.GetAsync(SettingKeys.GoogleMapsApiKey) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.GoogleClientId) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.RazorpayKeyId) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.RazorpayKeySecret) ?? string.Empty,
@@ -69,7 +67,6 @@ public class AdminApiKeysController : ControllerBase
         // — display-only, so the admin can see a key already works via config
         // even though the field above is blank.
         var defaults = new ApiKeysDto(
-            string.Empty, // Maps key was always frontend-only; no backend fallback to show.
             await _settings.GetOrConfigAsync(SettingKeys.GoogleClientId, "Google:ClientId"),
             await _settings.GetOrConfigAsync(SettingKeys.RazorpayKeyId, "Razorpay:KeyId"),
             await _settings.GetOrConfigAsync(SettingKeys.RazorpayKeySecret, "Razorpay:KeySecret"),

@@ -14,10 +14,8 @@ public record PublicSettingsDto(
     string ContactPhone,
     string ContactAddress,
     string ContactMapLink,
-    // Public by design (Maps keys are restricted by HTTP referrer, and an
-    // OAuth client id is not a secret) — safe to ship to the browser so the
-    // admin can change them without a frontend rebuild.
-    string GoogleMapsApiKey,
+    // Public by design (an OAuth client id is not a secret) — safe to ship
+    // to the browser so the admin can change it without a frontend rebuild.
     string GoogleClientId);
 
 /// <summary>Admin update; any null field is left unchanged.</summary>

@@ -48,9 +48,9 @@ how to make it run, harden the core flows, and add the time-sensitive integratio
 - Tidy the empty/loading/error states on the selection screen.
 - *Done when:* selecting garments produces a correct, live-updating bill.
 
-### Day 4 — Pickup scheduling & Google Maps *(location)*
-- Add `VITE_GOOGLE_MAPS_API_KEY`; confirm the draggable-pin map loads and the manual
-  fallback still works when the key is absent.
+### Day 4 — Pickup scheduling & map *(location)*
+- Confirm the OpenStreetMap/Leaflet draggable-pin map loads (no API key needed) and that
+  Nominatim reverse-geocoding fills city/state/pincode on pin drop.
 - Persist the chosen address + pickup time through the sign-in redirect (already handled via
   the local cart — verify on mobile).
 - Validate address fields and pincode.

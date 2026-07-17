@@ -68,10 +68,8 @@ public class SettingsService : ISettingsService
         await GetAsync(SettingKeys.ContactPhone) ?? string.Empty,
         await GetAsync(SettingKeys.ContactAddress) ?? string.Empty,
         await GetAsync(SettingKeys.ContactMapLink) ?? string.Empty,
-        // DB value (set from Admin → API Keys) wins if present. The Maps key was
-        // always frontend-only, so its fallback is the client's own .env var;
-        // the OAuth client id already lived in appsettings.json, so fall back
-        // to that here so a fresh clone with only appsettings still works.
-        await GetAsync(SettingKeys.GoogleMapsApiKey) ?? string.Empty,
+        // DB value (set from Admin → API Keys) wins if present; the OAuth
+        // client id already lived in appsettings.json, so fall back to that
+        // here so a fresh clone with only appsettings still works.
         await GetOrConfigAsync(SettingKeys.GoogleClientId, "Google:ClientId"));
 }
