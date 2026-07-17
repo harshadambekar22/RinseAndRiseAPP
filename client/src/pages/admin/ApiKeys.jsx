@@ -8,10 +8,9 @@ import api from '../../api/client'
 const SECTIONS = [
   {
     title: 'Google',
-    description: 'Powers "Sign in with Google" and the interactive pickup-location map.',
+    description: 'Powers "Sign in with Google".',
     fields: [
       { key: 'googleClientId', label: 'OAuth client ID', placeholder: 'xxxx.apps.googleusercontent.com', secret: false },
-      { key: 'googleMapsApiKey', label: 'Maps API key', placeholder: 'AIzaSy...', secret: true },
     ],
   },
   {

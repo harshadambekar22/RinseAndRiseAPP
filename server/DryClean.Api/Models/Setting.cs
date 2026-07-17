@@ -42,7 +42,6 @@ public static class SettingKeys
     // Third-party API keys, editable from Admin → API Keys instead of
     // appsettings.json so they can change without a redeploy. Empty means
     // "not set here" — services fall back to appsettings.json/env config.
-    public const string GoogleMapsApiKey = "GoogleMapsApiKey";
     public const string GoogleClientId = "GoogleClientId";
     public const string RazorpayKeyId = "RazorpayKeyId";
     public const string RazorpayKeySecret = "RazorpayKeySecret";

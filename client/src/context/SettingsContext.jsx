@@ -18,7 +18,6 @@ const DEFAULTS = {
   contactPhone: '',
   contactAddress: '',
   contactMapLink: '',
-  googleMapsApiKey: '',
   googleClientId: '',
 }
 
@@ -70,7 +69,6 @@ export function SettingsProvider({ children }) {
     // The backend already falls back to appsettings.json for googleClientId,
     // but a fresh clone that's only set up client/.env (no backend config,
     // no admin key saved yet) still needs a client-side fallback here.
-    googleMapsApiKey: settings.googleMapsApiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
     googleClientId: settings.googleClientId || import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   }
 

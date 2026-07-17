@@ -6,7 +6,6 @@ namespace DryClean.Api.Dtos;
 /// (shown as a hint, never written back). Secrets included — never expose
 /// this DTO outside an Admin-authorized route.</summary>
 public record ApiKeysDto(
-    string GoogleMapsApiKey,
     string GoogleClientId,
     string RazorpayKeyId,
     string RazorpayKeySecret,
@@ -29,7 +28,6 @@ public record ApiKeysResponseDto(ApiKeysDto Values, ApiKeysDto Defaults);
 /// <summary>Admin update; any null field is left unchanged. Send an empty
 /// string to clear an override and fall back to appsettings.json/env again.</summary>
 public record UpdateApiKeysDto(
-    string? GoogleMapsApiKey,
     string? GoogleClientId,
     string? RazorpayKeyId,
     string? RazorpayKeySecret,
