@@ -4,6 +4,7 @@ import { LogOut, LayoutDashboard, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useSettings } from '../context/SettingsContext'
+import { imageUrl } from '../api/client'
 import Icon from './Icon'
 import LoadingOverlay from './LoadingOverlay'
 
@@ -15,7 +16,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 export default function Navbar() {
   const { user, isAuthed, isAdmin, logout } = useAuth()
   const { isDark, toggle } = useTheme()
-  const { projectName, projectIcon } = useSettings()
+  const { projectName, projectIcon, projectLogo } = useSettings()
   const navigate = useNavigate()
   const location = useLocation()
   const isAdminArea = location.pathname.startsWith('/admin')
@@ -38,7 +39,9 @@ export default function Navbar() {
     <header className="header">
       <div className="container">
         <Link to="/" className="brand">
-          <span className="brand-mark"><Icon name={projectIcon} size={18} /></span>
+          <span className="brand-mark">
+            {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={18} />}
+          </span>
           {projectName}
         </Link>
 
