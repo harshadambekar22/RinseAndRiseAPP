@@ -41,6 +41,8 @@ public class AdminSettingsController : ControllerBase
             await _settings.SetAsync(SettingKeys.ProjectDescription, dto.ProjectDescription);
         if (dto.ProjectIcon is not null)
             await _settings.SetAsync(SettingKeys.ProjectIcon, dto.ProjectIcon);
+        if (dto.ProjectLogo is not null)
+            await _settings.SetAsync(SettingKeys.ProjectLogo, dto.ProjectLogo);
         if (dto.ThemePrimaryColor is not null)
             await _settings.SetAsync(SettingKeys.ThemePrimaryColor, dto.ThemePrimaryColor);
         if (dto.ThemeAccentColor is not null)

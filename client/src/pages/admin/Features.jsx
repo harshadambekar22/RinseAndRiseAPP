@@ -1,7 +1,7 @@
 import LoadingIcon from '../../components/LoadingIcon'
 import { useEffect, useState } from 'react'
-import { Check, Save } from 'lucide-react'
-import api from '../../api/client'
+import { Check, Save, Upload } from 'lucide-react'
+import api, { imageUrl } from '../../api/client'
 import { useSettings } from '../../context/SettingsContext'
 import Icon, { ICON_NAMES } from '../../components/Icon'
 import { applyThemeColors } from '../../utils/theme'
@@ -31,10 +31,11 @@ export default function Features() {
   const [savingKey, setSavingKey] = useState(null)
   const [savedKey, setSavedKey] = useState(null)
 
-  // Branding (project name/description/icon) is text input, so it gets its
-  // own explicit Save button rather than saving on every keystroke.
+  // Branding (project name/description/icon/logo) is text input, so it gets
+  // its own explicit Save button rather than saving on every keystroke.
   const [brandSaving, setBrandSaving] = useState(false)
   const [brandSaved, setBrandSaved] = useState(false)
+  const [logoUploading, setLogoUploading] = useState(false)
 
   // Theme colors get the same explicit-save treatment as branding.
   const [themeSaving, setThemeSaving] = useState(false)
@@ -81,6 +82,7 @@ export default function Features() {
         projectName: form.projectName,
         projectDescription: form.projectDescription,
         projectIcon: form.projectIcon,
+        projectLogo: form.projectLogo,
       })
       setForm(data)
       await refresh() // navbar, footer, browser tab title update immediately
@@ -88,6 +90,18 @@ export default function Features() {
       setTimeout(() => setBrandSaved(false), 2500)
     } finally {
       setBrandSaving(false)
+    }
+  }
+
+  const uploadLogo = async (file) => {
+    if (!file) return
+    setLogoUploading(true)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      const { data } = await api.post('/admin/uploads', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setForm((f) => ({ ...f, projectLogo: data.url }))
+    } finally {
+      setLogoUploading(false)
     }
   }
 
@@ -160,9 +174,25 @@ export default function Features() {
       <div className="panel" style={{ maxWidth: 640, marginTop: 16 }}>
         <strong style={{ fontFamily: 'var(--font-display)' }}>Branding</strong>
         <p className="muted" style={{ margin: '3px 0 14px', fontSize: '.85rem' }}>
-          The project name, description, and icon shown across the whole site — navbar,
-          footer, browser tab, and bills sent to customers.
+          The project name, description, icon, and logo shown across the whole site —
+          navbar, footer, browser tab, and bills sent to customers.
         </p>
+
+        <div className="field">
+          <label>Logo <span className="muted">(optional — replaces the icon in the navbar/footer when set)</span></label>
+          <div className="uploader">
+            {form.projectLogo
+              ? <img className="thumb lg" src={imageUrl(form.projectLogo)} alt="" />
+              : <div className="cat-icon"><Icon name={form.projectIcon} size={22} /></div>}
+            <label className="btn btn-ghost btn-sm">
+              <Upload size={14} /> {logoUploading ? 'Uploading…' : 'Upload'}
+              <input type="file" accept="image/*" hidden onChange={(e) => uploadLogo(e.target.files?.[0])} />
+            </label>
+            {form.projectLogo && (
+              <button className="btn btn-ghost btn-sm" onClick={() => setForm((f) => ({ ...f, projectLogo: '' }))}>Remove</button>
+            )}
+          </div>
+        </div>
 
         <div className="field">
           <label>Project name</label>

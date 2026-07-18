@@ -170,7 +170,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .header .container { height: 100%; display: flex; align-items: center; justify-content: space-between; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); }
 .brand:hover { text-decoration: none; }
-.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: grid; place-items: center; color: #fff; box-shadow: var(--shadow-sm); }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: grid; place-items: center; color: #fff; box-shadow: var(--shadow-sm); overflow: hidden; }
 .nav-links { display: none; gap: 4px; align-items: center; }
 .nav-links a { padding: 8px 12px; border-radius: 8px; color: var(--ink-soft); font-weight: 500; }
 .nav-links a:hover, .nav-links a.active { background: var(--mist); color: var(--ink); text-decoration: none; }

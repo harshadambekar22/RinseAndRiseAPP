@@ -25,6 +25,7 @@ public static class SettingKeys
     public const string ProjectName = "ProjectName";
     public const string ProjectDescription = "ProjectDescription";
     public const string ProjectIcon = "ProjectIcon";
+    public const string ProjectLogo = "ProjectLogo";
 
     // Theme — base hex colors the storefront derives its whole palette from
     // (buttons, navbar, links, icons). Changing these updates them everywhere
