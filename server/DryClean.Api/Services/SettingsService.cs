@@ -62,6 +62,7 @@ public class SettingsService : ISettingsService
         await GetAsync(SettingKeys.ProjectName) ?? "Fresh & Fold",
         await GetAsync(SettingKeys.ProjectDescription) ?? "Pickup & delivery dry cleaning, without the trip.",
         await GetAsync(SettingKeys.ProjectIcon) ?? "shirt",
+        await GetAsync(SettingKeys.ProjectLogo) ?? string.Empty,
         await GetAsync(SettingKeys.ThemePrimaryColor) ?? "#e8590c",
         await GetAsync(SettingKeys.ThemeAccentColor) ?? "#f59e0b",
         await GetAsync(SettingKeys.ContactEmail) ?? string.Empty,

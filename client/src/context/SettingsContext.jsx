@@ -12,6 +12,7 @@ const DEFAULTS = {
   projectName: 'Fresh & Fold',
   projectDescription: 'Pickup & delivery dry cleaning, without the trip.',
   projectIcon: 'shirt',
+  projectLogo: '',
   themePrimaryColor: '#e8590c',
   themeAccentColor: '#f59e0b',
   contactEmail: '',

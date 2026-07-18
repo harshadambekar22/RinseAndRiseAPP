@@ -1,9 +1,10 @@
 import { Mail, Phone, MapPin } from 'lucide-react'
 import { useSettings } from '../context/SettingsContext'
+import { imageUrl } from '../api/client'
 import Icon from './Icon'
 
 export default function Footer() {
-  const { projectName, projectIcon, projectDescription, contactEmail, contactPhone, contactAddress, contactMapLink } = useSettings()
+  const { projectName, projectIcon, projectLogo, projectDescription, contactEmail, contactPhone, contactAddress, contactMapLink } = useSettings()
   const hasContact = contactEmail || contactPhone || contactAddress
 
   return (
@@ -12,7 +13,9 @@ export default function Footer() {
         <div className="between" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
           <div>
             <div className="brand" style={{ fontSize: '1rem' }}>
-              <span className="brand-mark" style={{ width: 28, height: 28 }}><Icon name={projectIcon} size={15} /></span>
+              <span className="brand-mark" style={{ width: 28, height: 28 }}>
+                {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={15} />}
+              </span>
               {projectName}
             </div>
             <p className="muted" style={{ margin: '6px 0 0', fontSize: '.85rem' }}>
