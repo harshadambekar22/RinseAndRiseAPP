@@ -4,6 +4,7 @@ import { Check, Save, Upload } from 'lucide-react'
 import api, { imageUrl } from '../../api/client'
 import { useSettings } from '../../context/SettingsContext'
 import Icon, { ICON_NAMES } from '../../components/Icon'
+import BrandingPreview from '../../components/BrandingPreview'
 import { applyThemeColors } from '../../utils/theme'
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
@@ -169,9 +170,11 @@ export default function Features() {
         </div>
       </div>
 
+      <div className="admin-split wide" style={{ marginTop: 16 }}>
+      <div>
       {/* Branding — updates the navbar, footer, browser tab title, and page
           description everywhere in the app the moment it's saved. */}
-      <div className="panel" style={{ maxWidth: 640, marginTop: 16 }}>
+      <div className="panel">
         <strong style={{ fontFamily: 'var(--font-display)' }}>Branding</strong>
         <p className="muted" style={{ margin: '3px 0 14px', fontSize: '.85rem' }}>
           The project name, description, icon, and logo shown across the whole site —
@@ -237,7 +240,7 @@ export default function Features() {
 
       {/* Contact us — shown in the footer, and the "call to book" number when
           self-service scheduling is off. */}
-      <div className="panel" style={{ maxWidth: 640, marginTop: 16 }}>
+      <div className="panel" style={{ marginTop: 16 }}>
         <strong style={{ fontFamily: 'var(--font-display)' }}>Contact us</strong>
         <p className="muted" style={{ margin: '3px 0 14px', fontSize: '.85rem' }}>
           How customers reach you — shown in the site footer and, when self-service
@@ -283,7 +286,7 @@ export default function Features() {
       {/* Theme — the two base colors the whole storefront's palette (buttons,
           navbar, links, icons) is derived from. Applies live as you pick a
           color, and to every visitor the moment it's saved. */}
-      <div className="panel" style={{ maxWidth: 640, marginTop: 16 }}>
+      <div className="panel" style={{ marginTop: 16 }}>
         <strong style={{ fontFamily: 'var(--font-display)' }}>Theme colors</strong>
         <p className="muted" style={{ margin: '3px 0 14px', fontSize: '.85rem' }}>
           Pick your two brand colors — buttons, the navbar, links, and icons across the
@@ -328,7 +331,7 @@ export default function Features() {
         </button>
       </div>
 
-      <div className="panel" style={{ maxWidth: 640, marginTop: 16 }}>
+      <div className="panel" style={{ marginTop: 16 }}>
         {FEATURES.map((f, i) => (
           <div key={f.key}>
             {i > 0 && <div className="divider" />}
@@ -357,6 +360,10 @@ export default function Features() {
             )}
           </div>
         ))}
+      </div>
+      </div>
+
+      <BrandingPreview form={form} />
       </div>
     </>
   )
