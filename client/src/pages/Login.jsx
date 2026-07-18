@@ -95,7 +95,7 @@ export default function Login() {
           New here? <Link to="/register" state={location.state}>Create an account</Link>
         </p>
         <p className="muted center" style={{ fontSize: '.78rem', marginTop: 6 }}>
-          Admin demo: admin@dryclean.local / Admin@123
+          Admin demo: admin@rinserise.local / Admin@123
         </p>
       </div>
 

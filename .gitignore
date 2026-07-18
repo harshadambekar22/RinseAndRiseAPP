@@ -8,8 +8,8 @@ obj/
 *.db-wal
 *.db-journal
 # Uploaded images (runtime content, not source)
-server/DryClean.Api/wwwroot/uploads/*
-!server/DryClean.Api/wwwroot/uploads/.gitkeep
+server/RinseRise.Api/wwwroot/uploads/*
+!server/RinseRise.Api/wwwroot/uploads/.gitkeep
 # Node / Vite
 node_modules/
 client/dist/

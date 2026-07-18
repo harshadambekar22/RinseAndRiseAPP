@@ -1,4 +1,4 @@
-# Fresh & Fold — 10-Day Build Plan (≈4 hours/day, ~40 hours)
+# Rinse & Rise — 10-Day Build Plan (≈4 hours/day, ~40 hours)
 
 This plan turns the scaffold in this repository into a working, demoable product over ten
 focused half-days. **Day 0 is already done** — this code *is* the scaffold. Days 1–10 are
@@ -24,8 +24,8 @@ how to make it run, harden the core flows, and add the time-sensitive integratio
 - Install .NET 8 SDK and Node 18+. Open the repo. Install the EF CLI:
   `dotnet tool install --global dotnet-ef`. No database server to install — the app uses
   SQLite (a local file), already configured in `appsettings.json`.
-- `cd server/DryClean.Api && dotnet restore && dotnet ef migrations add InitialCreate &&
-  dotnet run` — confirm Swagger at `:5080/swagger`, confirm `dryclean.db` was created and
+- `cd server/RinseRise.Api && dotnet restore && dotnet ef migrations add InitialCreate &&
+  dotnet run` — confirm Swagger at `:5080/swagger`, confirm `rinserise.db` was created and
   the catalogue is seeded.
 - `cd client && npm install && npm run dev` — confirm the app loads at `:5173`.
 - Fix any first-run hiccups (a missing `using`, a package version).
@@ -105,7 +105,7 @@ how to make it run, harden the core flows, and add the time-sensitive integratio
 
 ### Day 10 — Hardening, build & deploy
 - Responsive QA on real devices: phone, tablet, laptop (order flow + admin).
-- Make sure `dryclean.db` lives on **persistent** disk on your host (not an ephemeral
+- Make sure `rinserise.db` lives on **persistent** disk on your host (not an ephemeral
   container filesystem), and run `dotnet ef database update` against it as part of the
   deploy. (Outgrown SQLite? See the README §5 note on switching providers.)
 - `npm run build` (set `VITE_API_BASE_URL`) and `dotnet publish -c Release`.
