@@ -9,7 +9,7 @@ const DEFAULTS = {
   pickupSchedulingEnabled: false,
   businessPhone: '',
   headline: 'Fresh clothes, without the trip.',
-  projectName: 'Fresh & Fold',
+  projectName: 'Rinse & Rise',
   projectDescription: 'Pickup & delivery dry cleaning, without the trip.',
   projectIcon: 'shirt',
   projectLogo: '',
