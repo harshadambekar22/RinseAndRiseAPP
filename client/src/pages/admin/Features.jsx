@@ -1,6 +1,6 @@
 import LoadingIcon from '../../components/LoadingIcon'
 import { useEffect, useState } from 'react'
-import { Check, Save, Upload } from 'lucide-react'
+import { Check, Save, Upload, RotateCcw } from 'lucide-react'
 import api, { imageUrl } from '../../api/client'
 import { useSettings } from '../../context/SettingsContext'
 import Icon, { ICON_NAMES } from '../../components/Icon'
@@ -8,6 +8,15 @@ import BrandingPreview from '../../components/BrandingPreview'
 import { applyThemeColors } from '../../utils/theme'
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
+const DEFAULT_THEME = { themePrimaryColor: '#e8590c', themeAccentColor: '#f59e0b' }
+
+// A curated palette so picking a color doesn't require knowing a hex code —
+// click a swatch, or fall back to the picker/hex field for anything else.
+const THEME_PRESETS = [
+  '#e8590c', '#dc2626', '#db2777', '#7c3aed',
+  '#2563eb', '#0891b2', '#059669', '#65a30d',
+  '#ca8a04', '#78716c', '#1f2937',
+]
 
 // Each entry here is one storefront feature the admin can flip on/off.
 // `key` matches the field name returned by GET/PUT /api/admin/settings.
@@ -120,6 +129,13 @@ export default function Features() {
     })
   }
 
+  // Resets the draft colors to the app defaults and previews them
+  // immediately — still requires "Save theme" to actually persist.
+  const resetTheme = () => {
+    setForm((f) => ({ ...f, ...DEFAULT_THEME }))
+    applyThemeColors({ primary: DEFAULT_THEME.themePrimaryColor, accent: DEFAULT_THEME.themeAccentColor })
+  }
+
   const saveTheme = async () => {
     setThemeSaving(true); setThemeSaved(false)
     try {
@@ -201,7 +217,7 @@ export default function Features() {
           <label>Project name</label>
           <input className="input" value={form.projectName || ''}
             onChange={(e) => setForm((f) => ({ ...f, projectName: e.target.value }))}
-            placeholder="Fresh & Fold" />
+            placeholder="Rinse & Rise" />
         </div>
         <div className="field">
           <label>Project description</label>
@@ -251,7 +267,7 @@ export default function Features() {
           <div className="field"><label>Contact email</label>
             <input className="input" type="email" value={form.contactEmail || ''}
               onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
-              placeholder="hello@freshandfold.in" />
+              placeholder="hello@rinserise.in" />
           </div>
           <div className="field"><label>Contact phone</label>
             <input className="input" value={form.contactPhone || ''}
@@ -298,22 +314,52 @@ export default function Features() {
             { key: 'themePrimaryColor', label: 'Primary', hint: 'Buttons, navbar accents, icons', placeholder: '#e8590c' },
             { key: 'themeAccentColor', label: 'Accent', hint: 'Bills, "ready" badges', placeholder: '#f59e0b' },
           ].map(({ key, label, hint, placeholder }) => (
-            <div className="field" key={key} style={{ flex: '1 1 220px' }}>
+            <div className="field" key={key} style={{ flex: '1 1 260px' }}>
               <label>{label}</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 2 }}>
+                {THEME_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setThemeColor(key, preset)}
+                    aria-pressed={form[key]?.toLowerCase() === preset}
+                    aria-label={`Use ${preset} for ${label}`}
+                    title={preset}
+                    style={{
+                      width: 30, height: 30, borderRadius: 8, cursor: 'pointer', background: preset,
+                      border: form[key]?.toLowerCase() === preset ? '2px solid var(--ink)' : '1px solid var(--line)',
+                      boxShadow: form[key]?.toLowerCase() === preset ? '0 0 0 2px var(--white), 0 0 0 4px var(--ink)' : 'none',
+                    }}
+                  />
+                ))}
+
+                {/* Native picker for anything outside the preset palette. */}
                 <input
                   type="color"
                   value={HEX_COLOR.test(form[key]) ? form[key] : '#000000'}
                   onChange={(e) => setThemeColor(key, e.target.value)}
-                  aria-label={`${label} color`}
-                  style={{ width: 44, height: 38, padding: 2, border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer' }}
+                  aria-label={`Custom ${label} color`}
+                  title="Pick a custom color"
+                  style={{ width: 30, height: 30, padding: 0, border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                    background: HEX_COLOR.test(form[key]) ? form[key] : 'transparent',
+                    border: '1px solid var(--line)',
+                  }}
                 />
                 <input
                   className="input"
                   value={form[key] || ''}
                   onChange={(e) => setThemeColor(key, e.target.value)}
                   placeholder={placeholder}
-                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '.85rem' }}
                 />
               </div>
               <p className="muted" style={{ margin: '4px 0 0', fontSize: '.78rem' }}>{hint}</p>
@@ -321,14 +367,24 @@ export default function Features() {
           ))}
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={saveTheme}
-          disabled={themeSaving || !HEX_COLOR.test(form.themePrimaryColor) || !HEX_COLOR.test(form.themeAccentColor)}
-          style={{ marginTop: 14 }}
-        >
-          {themeSaved ? <><Check size={16} /> Saved</> : <><Save size={16} /> {themeSaving ? 'Saving…' : 'Save theme'}</>}
-        </button>
+        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+          <button
+            className="btn btn-primary"
+            onClick={saveTheme}
+            disabled={themeSaving || !HEX_COLOR.test(form.themePrimaryColor) || !HEX_COLOR.test(form.themeAccentColor)}
+          >
+            {themeSaved ? <><Check size={16} /> Saved</> : <><Save size={16} /> {themeSaving ? 'Saving…' : 'Save theme'}</>}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={resetTheme}
+            disabled={themeSaving}
+            title="Reset the colors above to the app defaults"
+          >
+            <RotateCcw size={16} /> Reset to default
+          </button>
+        </div>
       </div>
 
       <div className="panel" style={{ marginTop: 16 }}>

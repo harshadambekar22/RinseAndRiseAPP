@@ -1,4 +1,4 @@
-# Fresh & Fold — Dry-Cleaning Web App
+# Rinse & Rise — Dry-Cleaning Web App
 
 A full-stack web application for a dry-cleaning business, with a **customer ordering
 flow** (select garments → live bill → schedule pickup on a map → pay with Razorpay →
@@ -31,7 +31,7 @@ counter billing that sends the bill to the customer's WhatsApp).
 | A code editor | — | VS Code, Rider, or Visual Studio |
 
 No database server to install — the app uses **SQLite**, a single local file
-(`server/DryClean.Api/dryclean.db`) created automatically the first time you run
+(`server/RinseRise.Api/rinserise.db`) created automatically the first time you run
 migrations. Nothing to download, no service to start, nothing to configure.
 
 ---
@@ -40,13 +40,13 @@ migrations. Nothing to download, no service to start, nothing to configure.
 
 ### Terminal 1 — backend API
 ```bash
-cd server/DryClean.Api
+cd server/RinseRise.Api
 
 dotnet restore
 
 # Create the first migration (only needed once), then run.
 # dotnet run applies any pending migrations on startup, creating
-# dryclean.db (a SQLite file) right next to the project — no server needed.
+# rinserise.db (a SQLite file) right next to the project — no server needed.
 dotnet ef migrations add InitialCreate
 dotnet run
 ```
@@ -68,11 +68,11 @@ npm run dev
   CORS or any base-URL config during development.
 
 ### Log in
-- **Admin:** `admin@dryclean.local` / `Admin@123`  → you'll land on the admin dashboard.
+- **Admin:** `admin@rinserise.local` / `Admin@123`  → you'll land on the admin dashboard.
 - **Customer:** click **Book now**, add items, and you'll be prompted to register/sign in
   during checkout.
 
-> You can change the seeded admin credentials in `server/DryClean.Api/appsettings.json`
+> You can change the seeded admin credentials in `server/RinseRise.Api/appsettings.json`
 > under the `Seed` section **before** the first run (i.e. before the admin row is created).
 
 ---
@@ -96,7 +96,7 @@ So you can clone, run, and click through end-to-end before signing up for anythi
 
 ## 4. Adding real API keys
 
-Backend keys live in **`server/DryClean.Api/appsettings.json`**.
+Backend keys live in **`server/RinseRise.Api/appsettings.json`**.
 Frontend keys live in **`client/.env`** (copy `client/.env.example` → `client/.env`).
 
 ### 4a. Razorpay (payments)
@@ -153,7 +153,7 @@ After editing `.env`, restart `npm run dev`. After editing `appsettings.json`, r
 
 ## 5. Database (SQLite) & EF Core migrations
 
-The app uses **SQLite** — the whole database is one file, `dryclean.db`, created next to the
+The app uses **SQLite** — the whole database is one file, `rinserise.db`, created next to the
 project the first time you run migrations. There's no server to install, no service to start,
 and nothing to configure beyond the file path already set in `appsettings.json`. Schema is
 still managed by **EF Core migrations** (not auto-create), so the flow is the same as any
@@ -163,7 +163,7 @@ other EF Core project:
 1. The connection string is already set in `appsettings.json` — nothing to edit:
    ```json
    "ConnectionStrings": {
-     "Default": "Data Source=dryclean.db"
+     "Default": "Data Source=rinserise.db"
    }
    ```
    (Use an absolute path here instead if you'd rather the file live somewhere specific.)
@@ -173,7 +173,7 @@ other EF Core project:
    ```
 3. Create the first migration, then start the app (which applies it and creates the file):
    ```bash
-   cd server/DryClean.Api
+   cd server/RinseRise.Api
    dotnet ef migrations add InitialCreate
    dotnet run              # Migrate() applies pending migrations on startup
    ```
@@ -194,7 +194,7 @@ dotnet ef migrations remove        # undo the last (unapplied) migration
 > call in `Program.cs` and run `dotnet ef database update` yourself during deploys.
 
 > **Resetting your data:** since it's just a file, you can start over any time by stopping
-> the app and deleting `server/DryClean.Api/dryclean.db` (and the `-shm`/`-wal` files if
+> the app and deleting `server/RinseRise.Api/rinserise.db` (and the `-shm`/`-wal` files if
 > present) — the next `dotnet run` recreates it from the migrations and reseeds it.
 
 > **Want MySQL/Postgres/SQL Server later instead?** SQLite is great for local dev and small
@@ -252,7 +252,7 @@ before shipping it.
   URL at build time.
 - **Backend:** publish with `dotnet publish -c Release` and host on Azure App Service,
   Render, Railway, or a VM. SQLite works fine in production for small/single-instance
-  deployments as long as the `dryclean.db` file lives on **persistent** disk (not an
+  deployments as long as the `rinserise.db` file lives on **persistent** disk (not an
   ephemeral container filesystem) — run `dotnet ef database update` against it as part of
   your deploy. If you outgrow a single file (multiple app instances, high write concurrency),
   switch to a managed Postgres/MySQL instance using the note in §5.
@@ -274,18 +274,18 @@ git push -u origin main
 
 ### 8b. Deploy to Railway (two services, one repo)
 
-This is a monorepo (`server/DryClean.Api` + `client`), so create **two** Railway
+This is a monorepo (`server/RinseRise.Api` + `client`), so create **two** Railway
 services from the same GitHub repo, each with its own **Root Directory**. Both ship
 with a `Dockerfile`, which Railway auto-detects — no Nixpacks config needed.
 
-**API service** — Root Directory: `server/DryClean.Api`
-1. New Service → Deploy from GitHub repo → set Root Directory to `server/DryClean.Api`.
+**API service** — Root Directory: `server/RinseRise.Api`
+1. New Service → Deploy from GitHub repo → set Root Directory to `server/RinseRise.Api`.
 2. Add a **Volume**, mount it at e.g. `/app/data` (so the SQLite file and uploaded
    images survive redeploys — the container filesystem otherwise resets every deploy).
 3. Environment variables (Settings → Variables):
    | Variable | Value |
    |---|---|
-   | `ConnectionStrings__Default` | `Data Source=/app/data/dryclean.db` |
+   | `ConnectionStrings__Default` | `Data Source=/app/data/rinserise.db` |
    | `Jwt__Key` | a long random secret (**don't** ship the appsettings.json placeholder) |
    | `Seed__AdminPassword` | your own admin password (don't ship the default) |
    | `CORS_ALLOWED_ORIGINS` | the client service's public URL, once you have it (comma-separate if more than one) |
@@ -304,7 +304,7 @@ with a `Dockerfile`, which Railway auto-detects — no Nixpacks config needed.
 4. Add both services' domains to Google OAuth's Authorized JavaScript origins and to
    Razorpay's allowed origins/webhook settings when you're ready to go live.
 
-**First admin login:** `admin@dryclean.local` / whatever you set `Seed__AdminPassword`
+**First admin login:** `admin@rinserise.local` / whatever you set `Seed__AdminPassword`
 to — the account is created automatically on first boot (see `SeedAdmin` in `Program.cs`).
 
 ---
@@ -312,10 +312,10 @@ to — the account is created automatically on first boot (see `SeedAdmin` in `P
 ## 9. Project structure
 
 ```
-dryclean-pro/
+rinse-and-rise/
 ├── PLAN.md                      # 10-day, 4-hours/day build plan
 ├── README.md                    # this file
-├── server/DryClean.Api/         # .NET 8 Web API
+├── server/RinseRise.Api/         # .NET 8 Web API
 │   ├── Controllers/             # Auth, ClothTypes, Orders, Payments, Admin
 │   ├── Services/                # Auth, Orders, Razorpay, Notifications, JWT, hashing
 │   ├── Models/ · Dtos/ · Data/  # entities, request/response types, EF DbContext + seed
@@ -330,7 +330,7 @@ dryclean-pro/
     └── Dockerfile               # Railway/any-Docker-host deploy — see §8b
 ```
 
-Enjoy building **Fresh & Fold**! 🧺
+Enjoy building **Rinse & Rise**! 🧺
 
 ---
 
@@ -362,7 +362,7 @@ Active offers automatically:
 
 ### Pamphlet / image uploads
 The offer and category forms let you **upload an image**. Files are sent to
-`POST /api/admin/uploads`, saved under `server/DryClean.Api/wwwroot/uploads/`, and served as
+`POST /api/admin/uploads`, saved under `server/RinseRise.Api/wwwroot/uploads/`, and served as
 static files (the app calls `UseStaticFiles`). Only image types up to ~6 MB are accepted.
 In production, set `VITE_API_BASE_URL` on the frontend so these image URLs resolve to your API
 origin.

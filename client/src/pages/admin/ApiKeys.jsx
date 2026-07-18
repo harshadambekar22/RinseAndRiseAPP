@@ -40,7 +40,7 @@ const SECTIONS = [
       { key: 'smtpUsername', label: 'Username', placeholder: 'you@yourdomain.com', secret: false },
       { key: 'smtpPassword', label: 'Password', placeholder: '••••••••', secret: true },
       { key: 'smtpFromEmail', label: 'From address', placeholder: 'no-reply@yourdomain.com', secret: false },
-      { key: 'smtpFromName', label: 'From name', placeholder: 'Fresh & Fold', secret: false },
+      { key: 'smtpFromName', label: 'From name', placeholder: 'Rinse & Rise', secret: false },
     ],
   },
 ]
