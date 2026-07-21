@@ -71,11 +71,21 @@ export default function Schedule() {
         setGeocodeStatus('empty')
         return
       }
+      // Not every OSM location has a road/suburb tagged (rural roads, small
+      // residential lanes, etc.) — widen the net across every locality-ish
+      // tag Nominatim commonly returns, so "area" is much less likely to
+      // come back blank. Last resort: reuse the first chunk of display_name.
+      const road = a.road || a.pedestrian || a.footway || a.residential
+      const locality = a.neighbourhood || a.suburb || a.quarter || a.hamlet || a.village
+      let area = [road, locality].filter(Boolean).join(', ')
+      if (!area && data.display_name) area = data.display_name.split(',')[0].trim()
+
       setForm((f) => ({
         ...f,
-        // Not every OSM location has all of these tagged — widen the net
-        // across the ones Nominatim commonly returns instead of just road+suburb.
-        line2: f.line2 || [a.road, a.neighbourhood || a.suburb || a.quarter || a.hamlet].filter(Boolean).join(', '),
+        // Prefer the freshly geocoded value, same as city/state/pincode below
+        // — otherwise, once line2 is filled once, moving the pin or clicking
+        // "Use my location" again can never update it again.
+        line2: area || f.line2,
         city: a.city || a.town || a.village || a.county || f.city,
         state: a.state || f.state,
         pincode: a.postcode || f.pincode,
@@ -127,7 +137,7 @@ export default function Schedule() {
     <main className="container page">
       <span className="eyebrow">Step 2 of 3</span>
       <h1>Schedule your pickup</h1>
-      <p>Drop a pin where we should collect your clothes, then pick a time.</p>
+      <p>Drop a pin where we should collect your clothes, then pick a date.</p>
 
       <div className="order-layout">
         <div className="stack">
@@ -203,10 +213,10 @@ export default function Schedule() {
 
         <aside className="order-summary-sticky">
           <div className="panel">
-            <h3>Pickup time</h3>
+            <h3>Pickup date</h3>
             <div className="field">
               <label>When should we collect?</label>
-              <input className="input" type="datetime-local" value={pickupAt} onChange={(e) => setPickupAt(e.target.value)} />
+              <input className="input" type="date" value={pickupAt} onChange={(e) => setPickupAt(e.target.value)} />
             </div>
             <button className="btn btn-primary btn-block" disabled={!canContinue} onClick={proceed}>
               Continue to payment <ArrowRight size={16} />

@@ -5,14 +5,13 @@ export const useTheme = () => useContext(ThemeContext)
 
 const KEY = 'df_theme'
 
-// Light (orange + white) is the default. We honour a saved choice first,
-// then the OS preference, falling back to light.
+// Dark (black + orange) is the default. Once a user toggles the theme,
+// their choice is saved and wins on every later visit.
 function getInitialTheme() {
-  if (typeof window === 'undefined') return 'light'
+  if (typeof window === 'undefined') return 'dark'
   const saved = localStorage.getItem(KEY)
   if (saved === 'light' || saved === 'dark') return saved
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-  return prefersDark ? 'dark' : 'light'
+  return 'dark'
 }
 
 export function ThemeProvider({ children }) {

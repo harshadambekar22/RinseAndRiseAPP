@@ -10,15 +10,13 @@
          Project Name/Description (Admin → Features → Branding). -->
     <title>Rinse &amp; Rise — Dry Cleaning, picked up & delivered</title>
     <script>
-      // Apply the saved (or OS-preferred) theme before first paint to avoid a flash.
+      // Apply the saved theme (or dark, the default) before first paint to avoid a flash.
       (function () {
         try {
           var t = localStorage.getItem('df_theme');
-          if (t !== 'light' && t !== 'dark') {
-            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          }
+          if (t !== 'light' && t !== 'dark') t = 'dark';
           document.documentElement.setAttribute('data-theme', t);
-        } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+        } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
       })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

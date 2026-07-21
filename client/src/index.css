@@ -110,6 +110,10 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 /* ---------- Layout ---------- */
 .container { width: 100%; max-width: 1160px; margin-inline: auto; padding-inline: 18px; }
 .page { padding-block: clamp(20px, 4vw, 44px); min-height: calc(100vh - var(--header-h)); }
+/* Same padding as .page, without the full-viewport min-height — for content
+   sections stacked on one page (e.g. Home), where .page's min-height would
+   force each section to be almost a full screen tall regardless of content. */
+.page-section { padding-block: clamp(20px, 4vw, 44px); }
 .stack > * + * { margin-top: 16px; }
 .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .between { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }

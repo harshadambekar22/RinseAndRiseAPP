@@ -86,7 +86,7 @@ export default function Home() {
 
       {/* Categories */}
       {categories.length > 0 && (
-        <section className="container page" style={{ paddingBottom: 0 }}>
+        <section className="container page-section" style={{ paddingBottom: 0 }}>
           <div className="center" style={{ marginBottom: 22 }}>
             <span className="eyebrow">What we clean</span>
             <h2>Browse by category</h2>
@@ -107,7 +107,7 @@ export default function Home() {
 
       {/* Featured discounts */}
       {deals.length > 0 && (
-        <section className="container page" style={{ paddingBottom: 0 }}>
+        <section className="container page-section" style={{ paddingBottom: 0 }}>
           <div className="between" style={{ marginBottom: 18, alignItems: 'flex-end' }}>
             <div>
               <span className="eyebrow">Deals</span>
@@ -133,7 +133,7 @@ export default function Home() {
 
       {/* How it works */}
       {steps.length > 0 && (
-        <section className="container page">
+        <section className="container page-section">
           <div className="center" style={{ marginBottom: 26 }}>
             <span className="eyebrow">How it works</span>
             <h2>Fresh in four steps</h2>
@@ -154,7 +154,7 @@ export default function Home() {
       )}
 
       {/* Promise */}
-      <section className="container page" style={{ paddingTop: 0 }}>
+      <section className="container page-section" style={{ paddingTop: 0 }}>
         <div className="promise-grid">
           {[
             { Icon: Truck, t: 'Free pick & drop', d: 'Collection and delivery at your doorstep.' },
