@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using RinseRise.Api.Dtos;
 using RinseRise.Api.Models;
 using RinseRise.Api.Services;
@@ -37,9 +38,21 @@ public class AdminApiKeysController : ControllerBase
         if (dto.SmtpPort is not null) await _settings.SetAsync(SettingKeys.SmtpPort, dto.SmtpPort);
         if (dto.SmtpUsername is not null) await _settings.SetAsync(SettingKeys.SmtpUsername, dto.SmtpUsername);
         if (dto.SmtpPassword is not null) await _settings.SetAsync(SettingKeys.SmtpPassword, dto.SmtpPassword);
-        if (dto.SmtpFromEmail is not null) await _settings.SetAsync(SettingKeys.SmtpFromEmail, dto.SmtpFromEmail);
+        if (dto.SmtpFromEmail is not null)
+        {
+            var fromEmail = dto.SmtpFromEmail.Trim();
+            if (fromEmail.Length > 0 && !IsValidEmail(fromEmail))
+                return BadRequest("SmtpFromEmail must be a valid email address, e.g. no-reply@yourdomain.com.");
+            await _settings.SetAsync(SettingKeys.SmtpFromEmail, fromEmail);
+        }
         if (dto.SmtpFromName is not null) await _settings.SetAsync(SettingKeys.SmtpFromName, dto.SmtpFromName);
         return Ok(await BuildResponse());
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        try { _ = new MailAddress(email); return true; }
+        catch (FormatException) { return false; }
     }
 
     private async Task<ApiKeysResponseDto> BuildResponse()

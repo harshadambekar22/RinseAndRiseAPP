@@ -158,7 +158,7 @@ export default function Payment() {
             {cart.address ? (
               <p className="muted" style={{ margin: 0 }}>
                 {cart.address.label} — {cart.address.line1}{cart.address.line2 ? `, ${cart.address.line2}` : ''}, {cart.address.city} {cart.address.pincode}
-                {cart.pickupAt ? <><br />Scheduled: {new Date(cart.pickupAt).toLocaleString()}</> : null}
+                {cart.pickupAt ? <><br />Scheduled: {new Date(cart.pickupAt).toLocaleDateString()}</> : null}
               </p>
             ) : <p className="muted" style={{ margin: 0 }}>No address set.</p>}
           </div>
