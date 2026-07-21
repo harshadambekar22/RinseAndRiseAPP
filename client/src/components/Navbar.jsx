@@ -46,8 +46,10 @@ export default function Navbar() {
         </Link>
 
         <nav className="nav-links">
-          {!isAdminArea && <NavLink to="/order">Book a pickup</NavLink>}
-          {!isAdminArea && isAuthed && <NavLink to="/orders">My orders</NavLink>}
+          {/* Admins only get the Admin dashboard link — the customer ordering
+              flow (Book a pickup / My orders) isn't relevant to them. */}
+          {!isAdmin && !isAdminArea && <NavLink to="/order">Book a pickup</NavLink>}
+          {!isAdmin && !isAdminArea && isAuthed && <NavLink to="/orders">My orders</NavLink>}
           {isAdmin && <NavLink to="/admin">Admin</NavLink>}
         </nav>
 
