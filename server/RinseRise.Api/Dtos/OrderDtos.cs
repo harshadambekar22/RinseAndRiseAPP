@@ -26,17 +26,21 @@ public record UpdateStatusDto([Required] string Status);
 
 // --- Read models returned to the client ---
 
-public record OrderItemViewDto(int ClothTypeId, string Name, decimal UnitPrice, int Quantity, decimal LineTotal);
+public record OrderItemViewDto(
+    int ClothTypeId, string Name, decimal OriginalUnitPrice, decimal UnitPrice,
+    int Quantity, decimal LineTotal, decimal LineDiscount);
 
 public record OrderViewDto(
     int Id,
     string OrderNumber,
     string CustomerName,
     string CustomerPhone,
+    string? CustomerEmail,
     string Channel,
     string Status,
     string PaymentStatus,
     decimal SubTotal,
+    decimal DiscountTotal,
     decimal TaxAmount,
     decimal DeliveryFee,
     decimal Total,

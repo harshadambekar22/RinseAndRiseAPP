@@ -31,13 +31,16 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult<List<OrderViewDto>>> Mine() =>
         Ok(await _orders.GetForUserAsync(CurrentUserId));
 
-    /// <summary>Live tracking for a single order.</summary>
+    /// <summary>Live tracking / invoice detail for a single order. Only the
+    /// order's own customer or an admin may view it.</summary>
     [Authorize]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<OrderViewDto>> GetOne(int id)
     {
         var order = await _orders.GetByIdAsync(id);
-        return order is null ? NotFound() : Ok(order);
+        if (order is null) return NotFound();
+        if (!User.IsInRole("Admin") && !await _orders.IsOwnedByAsync(id, CurrentUserId)) return Forbid();
+        return Ok(order);
     }
 
     /// <summary>Admin advances the order through its lifecycle.</summary>

@@ -53,6 +53,17 @@ public class AdminController : ControllerBase
     public async Task<ActionResult<List<OrderViewDto>>> Transactions() =>
         Ok(await _orders.GetAllAsync());
 
+    /// <summary>All orders for the Orders management grid (sort/filter/status update
+    /// happen client-side; status changes go through PUT /orders/{id}/status).</summary>
+    [HttpGet("orders")]
+    public async Task<ActionResult<List<OrderViewDto>>> Orders() =>
+        Ok(await _orders.GetAllAsync());
+
+    /// <summary>Invoice search by order number, mobile number, or account email.</summary>
+    [HttpGet("invoices/search")]
+    public async Task<ActionResult<List<OrderViewDto>>> SearchInvoices([FromQuery] string q) =>
+        Ok(await _orders.SearchAsync(q));
+
     /// <summary>All registered customers and their order counts.</summary>
     [HttpGet("users")]
     public async Task<ActionResult<List<UserViewDto>>> Users()

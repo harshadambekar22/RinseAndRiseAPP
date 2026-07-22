@@ -18,6 +18,8 @@ import MyOrders from './pages/MyOrders'
 
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import Orders from './pages/admin/Orders'
+import Invoices from './pages/admin/Invoices'
 import Transactions from './pages/admin/Transactions'
 import Users from './pages/admin/Users'
 import ShopBilling from './pages/admin/ShopBilling'
@@ -55,6 +57,8 @@ export default function App() {
         {/* Admin dashboard */}
         <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route index element={<AdminDashboard />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="invoices" element={<Invoices />} />
           <Route path="offers" element={<Offers />} />
           <Route path="categories" element={<Categories />} />
           <Route path="prices" element={<Prices />} />

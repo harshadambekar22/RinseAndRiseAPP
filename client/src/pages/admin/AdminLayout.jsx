@@ -1,11 +1,13 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
-import { LayoutDashboard, Receipt, Users as UsersIcon, ScanLine, Tag, Shapes, IndianRupee, ToggleLeft, KeyRound, Settings as SettingsIcon, ExternalLink } from 'lucide-react'
+import { LayoutDashboard, Receipt, Users as UsersIcon, ScanLine, Tag, Shapes, IndianRupee, ToggleLeft, KeyRound, Settings as SettingsIcon, ExternalLink, PackageCheck, FileText } from 'lucide-react'
 
 export default function AdminLayout() {
   return (
     <div className="admin">
       <aside className="admin-side">
         <NavLink to="/admin" end><LayoutDashboard size={17} /> Dashboard</NavLink>
+        <NavLink to="/admin/orders"><PackageCheck size={17} /> Orders</NavLink>
+        <NavLink to="/admin/invoices"><FileText size={17} /> Invoices</NavLink>
         <NavLink to="/admin/offers"><Tag size={17} /> Offers</NavLink>
         <NavLink to="/admin/categories"><Shapes size={17} /> Categories</NavLink>
         <NavLink to="/admin/prices"><IndianRupee size={17} /> Prices</NavLink>
