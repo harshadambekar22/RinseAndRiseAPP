@@ -139,7 +139,7 @@ export default function Invoice({ order, onClose }) {
         </div>
       </div>
 
-      <div className="invoice-actions">
+      <div className="invoice-actions" data-html2canvas-ignore="true">
         <button className="btn btn-primary btn-sm" onClick={download} disabled={downloading}>
           <Download size={15} /> {downloading ? 'Preparing…' : 'Download as PDF'}
         </button>

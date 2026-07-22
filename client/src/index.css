@@ -312,6 +312,22 @@ td.num { font-variant-numeric: tabular-nums; }
   background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-lg);
   width: 100%; max-width: 560px; margin: auto;
 }
+
+/* An invoice is a printable document, not a themed app surface — pin it to
+   light colors regardless of the site's dark/light mode so it always reads
+   correctly on screen, in the PDF export, and on paper. Redeclaring the theme
+   variables here overrides the [data-theme="dark"] root values for every
+   var(--ink)/var(--white)/etc. used inside .invoice-print and .modal-panel.
+   The explicit `color` re-declaration matters too: plain text color is
+   inherited as an already-resolved value from <body>'s `color: var(--ink)`,
+   so redefining --ink alone doesn't fix elements (like table cells) that
+   never set `color` themselves — they'd keep inheriting dark mode's text
+   color on this now-light card. Re-asserting `color` here forces a fresh
+   var(--ink) lookup that descendants without their own color rule inherit. */
+.modal-panel, .invoice-print {
+  --ink: #211a15; --ink-soft: #6f6155; --mist: #fbf3ec; --line: #efe2d6; --white: #ffffff;
+  color: var(--ink);
+}
 .modal-close-row { display: flex; justify-content: flex-end; padding: 10px 10px 0; }
 .modal-close-row button {
   width: 32px; height: 32px; border-radius: 999px; border: 1px solid var(--line);
@@ -328,9 +344,22 @@ td.num { font-variant-numeric: tabular-nums; }
 .invoice-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; padding: 14px 20px; background: var(--mist); font-size: .84rem; }
 .invoice-meta .k { color: var(--ink-soft); }
 .invoice-meta .v { font-weight: 600; color: var(--ink); }
-.invoice-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-.invoice-table th, .invoice-table td { text-align: left; padding: 8px 4px; border-bottom: 1px dashed var(--line); }
+/* table-layout: fixed keeps columns to their declared widths — with the
+   default auto layout, a table can render wider than its container (and get
+   silently clipped by .bill's overflow: hidden) once column content is wide
+   enough, cutting off the rightmost Amount column. table-layout: fixed alone
+   isn't enough, though: a <table>'s default min-width is its content's
+   min-content width, so an unbreakable token (e.g. "₹144.00") can still
+   force the table wider than 100% of its container. min-width: 0 on both
+   the table and its cells removes that floor so the fixed column widths
+   are actually the last word, and content wraps instead of overflowing. */
+.invoice-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; font-size: .88rem; }
+.invoice-table th, .invoice-table td { min-width: 0; text-align: left; padding: 8px 4px; border-bottom: 1px dashed var(--line); overflow-wrap: break-word; }
 .invoice-table th { font-family: var(--font-display); font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); }
+.invoice-table th:nth-child(1) { width: 40%; }
+.invoice-table th:nth-child(2) { width: 14%; }
+.invoice-table th:nth-child(3) { width: 23%; }
+.invoice-table th:nth-child(4) { width: 23%; }
 .invoice-table td.num, .invoice-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .invoice-orig { text-decoration: line-through; color: var(--ink-soft); font-size: .8rem; margin-right: 6px; }
 .invoice-actions { display: flex; gap: 10px; padding: 0 20px 20px; }
