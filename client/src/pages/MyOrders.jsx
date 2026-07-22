@@ -1,8 +1,9 @@
 import LoadingIcon from '../components/LoadingIcon'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PackageOpen, Plus } from 'lucide-react'
+import { PackageOpen, Plus, Receipt } from 'lucide-react'
 import api from '../api/client'
+import InvoiceModal from '../components/InvoiceModal'
 
 const badgeFor = (status) => {
   if (status === 'Delivered') return 'badge-green'
@@ -15,6 +16,7 @@ const label = (s) => s.replace(/([a-z])([A-Z])/g, '$1 $2')
 export default function MyOrders() {
   const [orders, setOrders] = useState(null)
   const [error, setError] = useState('')
+  const [invoiceOrder, setInvoiceOrder] = useState(null)
 
   useEffect(() => {
     api.get('/orders/mine')
@@ -54,12 +56,17 @@ export default function MyOrders() {
               </div>
               <div className="row" style={{ gap: 12 }}>
                 <span className={`badge ${badgeFor(o.status)}`}>{label(o.status)}</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => setInvoiceOrder(o)}>
+                  <Receipt size={15} /> Invoice
+                </button>
                 <Link to={`/track/${o.id}`} className="btn btn-ghost btn-sm">Track</Link>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />
     </main>
   )
 }

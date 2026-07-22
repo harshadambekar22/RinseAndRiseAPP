@@ -52,6 +52,7 @@ public class AppDbContext : DbContext
         }
 
         b.Entity<OrderItem>().Ignore(i => i.LineTotal);
+        b.Entity<OrderItem>().Ignore(i => i.LineDiscount);
 
         SeedCategories(b);
         SeedCatalogue(b);

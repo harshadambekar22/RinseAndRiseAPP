@@ -13,6 +13,11 @@ public interface IOrderService
     Task<OrderViewDto?> GetByIdAsync(int id);
     Task<OrderViewDto?> UpdateStatusAsync(int id, string status);
     Task<List<OrderViewDto>> GetAllAsync();
+
+    /// <summary>Invoice lookup by order number, phone, or the linked account's email.</summary>
+    Task<List<OrderViewDto>> SearchAsync(string query);
+
+    Task<bool> IsOwnedByAsync(int orderId, int userId);
 }
 
 public class OrderService : IOrderService
@@ -95,13 +100,15 @@ public class OrderService : IOrderService
         foreach (var input in items)
         {
             if (!catalogue.TryGetValue(input.ClothTypeId, out var ct)) continue;
-            // Charge the effective (discounted) price so the bill matches the catalogue.
-            var unitPrice = _pricing.Compute(ct, activeOffers).Price;
+            // Charge the effective (discounted) price so the bill matches the catalogue,
+            // but keep the original price too so invoices can show what was saved.
+            var effective = _pricing.Compute(ct, activeOffers);
             order.Items.Add(new OrderItem
             {
                 ClothTypeId = ct.Id,
                 ClothTypeName = ct.Name,
-                UnitPrice = unitPrice,
+                OriginalUnitPrice = effective.Original,
+                UnitPrice = effective.Price,
                 Quantity = input.Quantity
             });
         }
@@ -110,6 +117,7 @@ public class OrderService : IOrderService
             throw new InvalidOperationException("None of the selected items were valid.");
 
         order.SubTotal = order.Items.Sum(i => i.UnitPrice * i.Quantity);
+        order.DiscountTotal = order.Items.Sum(i => i.LineDiscount);
         order.TaxAmount = Math.Round(order.SubTotal * TaxRate, 2);
         order.DeliveryFee = DeliveryFee;
         order.Total = order.SubTotal + order.TaxAmount + order.DeliveryFee;
@@ -125,14 +133,15 @@ public class OrderService : IOrderService
     }
 
     public async Task<List<OrderViewDto>> GetForUserAsync(int userId) =>
-        (await _db.Orders.Include(o => o.Items)
+        (await _db.Orders.Include(o => o.Items).Include(o => o.User)
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt).ToListAsync())
             .Select(ToView).ToList();
 
     public async Task<OrderViewDto?> GetByIdAsync(int id)
     {
-        var order = await _db.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id);
+        var order = await _db.Orders.Include(o => o.Items).Include(o => o.User)
+            .FirstOrDefaultAsync(o => o.Id == id);
         return order is null ? null : ToView(order);
     }
 
@@ -141,7 +150,8 @@ public class OrderService : IOrderService
         if (!Enum.TryParse<OrderStatus>(status, true, out var parsed))
             throw new InvalidOperationException($"Unknown status '{status}'.");
 
-        var order = await _db.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id);
+        var order = await _db.Orders.Include(o => o.Items).Include(o => o.User)
+            .FirstOrDefaultAsync(o => o.Id == id);
         if (order is null) return null;
 
         order.Status = parsed;
@@ -151,15 +161,35 @@ public class OrderService : IOrderService
     }
 
     public async Task<List<OrderViewDto>> GetAllAsync() =>
-        (await _db.Orders.Include(o => o.Items)
+        (await _db.Orders.Include(o => o.Items).Include(o => o.User)
             .OrderByDescending(o => o.CreatedAt).ToListAsync())
             .Select(ToView).ToList();
 
+    public async Task<List<OrderViewDto>> SearchAsync(string query)
+    {
+        var q = (query ?? string.Empty).Trim().ToLower();
+        if (string.IsNullOrEmpty(q)) return new List<OrderViewDto>();
+
+        var orders = await _db.Orders.Include(o => o.Items).Include(o => o.User)
+            .Where(o => o.OrderNumber.ToLower().Contains(q)
+                     || o.CustomerPhone.ToLower().Contains(q)
+                     || (o.User != null && o.User.Email.ToLower().Contains(q)))
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        return orders.Select(ToView).ToList();
+    }
+
+    public async Task<bool> IsOwnedByAsync(int orderId, int userId) =>
+        await _db.Orders.AnyAsync(o => o.Id == orderId && o.UserId == userId);
+
     private static OrderViewDto ToView(Order o) => new(
-        o.Id, o.OrderNumber, o.CustomerName, o.CustomerPhone,
+        o.Id, o.OrderNumber, o.CustomerName, o.CustomerPhone, o.User?.Email,
         o.Channel.ToString(), o.Status.ToString(), o.PaymentStatus.ToString(),
-        o.SubTotal, o.TaxAmount, o.DeliveryFee, o.Total,
+        o.SubTotal, o.DiscountTotal, o.TaxAmount, o.DeliveryFee, o.Total,
         o.PickupAddressText, o.ScheduledPickupAt, o.CreatedAt,
         o.Items.Select(i => new OrderItemViewDto(
-            i.ClothTypeId, i.ClothTypeName, i.UnitPrice, i.Quantity, i.UnitPrice * i.Quantity)).ToList());
+            i.ClothTypeId, i.ClothTypeName, i.OriginalUnitPrice, i.UnitPrice,
+            i.Quantity, i.UnitPrice * i.Quantity, i.LineDiscount)).ToList());
 }

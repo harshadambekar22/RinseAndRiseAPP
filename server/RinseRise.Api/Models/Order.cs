@@ -29,6 +29,11 @@ public class Order
     public decimal SubTotal { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal DeliveryFee { get; set; }
+
+    /// <summary>Total amount saved across all lines vs. undiscounted catalogue
+    /// prices — shown on the invoice, doesn't affect Total (already baked into
+    /// each line's UnitPrice).</summary>
+    public decimal DiscountTotal { get; set; }
     public decimal Total { get; set; }
 
     // Pickup / drop scheduling
