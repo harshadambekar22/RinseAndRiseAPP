@@ -11,11 +11,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app .
 
-# The SQLite file (ConnectionStrings:Default) and wwwroot/uploads both live on
-# the container's writable layer by default, which Railway wipes on every
-# redeploy. Mount a Railway Volume and point ConnectionStrings__Default (env
-# var) at a path under it to persist data across deploys — see README "Deploy
-# to Railway".
+# The SQLite file (ConnectionStrings:Default) and uploads dir (Uploads:Directory)
+# both default to paths on the container's writable layer, which Railway wipes
+# on every redeploy. Mount a Railway Volume and point ConnectionStrings__Default
+# and Uploads__Directory (env vars) at paths under it to persist data across
+# deploys — see README "Deploy to Railway".
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "RinseRise.Api.dll"]

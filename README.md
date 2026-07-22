@@ -286,6 +286,7 @@ with a `Dockerfile`, which Railway auto-detects — no Nixpacks config needed.
    | Variable | Value |
    |---|---|
    | `ConnectionStrings__Default` | `Data Source=/app/data/rinserise.db` |
+   | `Uploads__Directory` | `/app/data/uploads` (branding logo / offer images — without this they're written to the container's own filesystem and lost on the next redeploy) |
    | `Jwt__Key` | a long random secret (**don't** ship the appsettings.json placeholder) |
    | `Seed__AdminPassword` | your own admin password (don't ship the default) |
    | `CORS_ALLOWED_ORIGINS` | the client service's public URL, once you have it (comma-separate if more than one) |
