@@ -14,7 +14,7 @@ export default function Footer() {
           <div>
             <div className="brand" style={{ fontSize: '1rem' }}>
               <span className="brand-mark" style={{ width: 28, height: 28 }}>
-                {projectLogo ? <img src={imageUrl(projectLogo)} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={15} />}
+                {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={15} />}
               </span>
               {projectName}
             </div>
