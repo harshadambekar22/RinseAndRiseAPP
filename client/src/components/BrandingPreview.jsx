@@ -14,7 +14,7 @@ function Mark({ logo, icon, size, iconSize }) {
       background: 'linear-gradient(135deg, var(--primary), var(--primary-deep))', color: '#fff',
     }}>
       {logo
-        ? <img src={imageUrl(logo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        ? <img src={imageUrl(logo)} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         : <Icon name={icon} size={iconSize} />}
     </span>
   )

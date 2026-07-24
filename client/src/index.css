@@ -363,6 +363,11 @@ td.num { font-variant-numeric: tabular-nums; }
 .invoice-letterhead .mark img { width: 100%; height: 100%; object-fit: contain; }
 .invoice-letterhead h2 { margin: 0; font-family: var(--font-display); font-size: 1.1rem; }
 .invoice-letterhead .contact { font-size: .78rem; color: var(--ink-soft); display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 2px; }
+/* Flexbox alignment (not vertical-align) so the icon still lines up with the
+   text once html2canvas rasterizes this for the PDF export — html2canvas
+   approximates font metrics differently than the browser, which threw off
+   vertical-align-based alignment. */
+.invoice-letterhead .contact span { display: inline-flex; align-items: center; gap: 4px; }
 .invoice-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; padding: 14px 20px; background: var(--mist); font-size: .84rem; }
 .invoice-meta .k { color: var(--ink-soft); }
 .invoice-meta .v { font-weight: 600; color: var(--ink); }
