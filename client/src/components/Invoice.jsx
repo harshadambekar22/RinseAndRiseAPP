@@ -25,6 +25,14 @@ export default function Invoice({ order, onClose }) {
         import('jspdf'),
       ])
       const node = printRef.current
+      // The invoice's fonts (Plus Jakarta Sans, Inter) load async from Google
+      // Fonts with display:swap — the page paints with a fallback font first,
+      // then swaps once the real font arrives. If that swap hasn't finished
+      // yet, html2canvas freezes the capture mid-swap using the fallback
+      // font's metrics, which throws off icon/text alignment even though the
+      // live DOM looks fine moments later. Waiting for the Font Loading API
+      // here guarantees the capture happens after the swap.
+      if (document.fonts?.ready) await document.fonts.ready
       // The logo is fetched from the API's own origin, so reading its pixels
       // into a canvas requires a CORS-mode request. But every other <img> of
       // this same logo on the site (Navbar, Footer, ...) loads it as a plain,
