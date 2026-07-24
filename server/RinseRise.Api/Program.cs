@@ -120,13 +120,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// CORS must run before UseStaticFiles: static file middleware serves the
+// response and short-circuits the pipeline, so if CORS ran after it, /uploads
+// responses (e.g. the branding logo) would go out with no
+// Access-Control-Allow-Origin header. That's invisible in a plain <img> tag
+// but breaks html2canvas's invoice PDF export, which must read the image's
+// pixels into a canvas and silently drops any image that fails CORS.
+app.UseCors("client");
 app.UseStaticFiles(); // wwwroot's other static assets
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadsDir),
     RequestPath = "/uploads"
 });
-app.UseCors("client");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

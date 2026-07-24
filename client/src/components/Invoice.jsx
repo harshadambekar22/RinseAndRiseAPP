@@ -25,26 +25,39 @@ export default function Invoice({ order, onClose }) {
         import('jspdf'),
       ])
       const node = printRef.current
-      const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' })
+      // useCORS: the logo is fetched from the API's own origin (not the
+      // client's), so without CORS the canvas is tainted and html2canvas
+      // silently drops the image from the capture instead of throwing.
+      const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
       const imgData = canvas.toDataURL('image/png')
 
-      // Fit the captured canvas onto A4, preserving aspect ratio.
-      const pdf = new jsPDF({ unit: 'pt', format: 'a4' })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
+      // Measure an A4 page just to get its point dimensions, then decide
+      // page size from the actual content height.
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const pageHeight = doc.internal.pageSize.getHeight()
       const imgHeight = (canvas.height * pageWidth) / canvas.width
 
-      let heightLeft = imgHeight
-      let position = 0
-      pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
-      heightLeft -= pageHeight
-      while (heightLeft > 0) {
-        position -= pageHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
+      if (imgHeight <= pageHeight) {
+        // Most invoices are shorter than a full A4 sheet — size the page to
+        // the content itself so there's no blank space below it.
+        const pdf = new jsPDF({ unit: 'pt', format: [pageWidth, imgHeight] })
+        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight)
+        pdf.save(`Invoice-${order.orderNumber}.pdf`)
+      } else {
+        // Longer invoices: paginate across as many A4 sheets as needed.
+        let heightLeft = imgHeight
+        let position = 0
+        doc.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
         heightLeft -= pageHeight
+        while (heightLeft > 0) {
+          position -= pageHeight
+          doc.addPage()
+          doc.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
+          heightLeft -= pageHeight
+        }
+        doc.save(`Invoice-${order.orderNumber}.pdf`)
       }
-      pdf.save(`Invoice-${order.orderNumber}.pdf`)
     } catch {
       // If the PDF libraries aren't installed yet (npm install pending) or
       // the capture fails for any reason, fall back to the browser's own
@@ -59,13 +72,13 @@ export default function Invoice({ order, onClose }) {
     <div className="bill invoice-print" ref={printRef}>
       <div className="invoice-letterhead">
         <span className="mark">
-          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" /> : <Icon name={projectIcon} size={20} />}
+          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" crossOrigin="anonymous" /> : <Icon name={projectIcon} size={20} />}
         </span>
         <div>
           <h2>{projectName}</h2>
           <div className="contact">
-            {contactEmail && <span><Mail size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />{contactEmail}</span>}
-            {phone && <span><Phone size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />{phone}</span>}
+            {contactEmail && <span><Mail size={11} />{contactEmail}</span>}
+            {phone && <span><Phone size={11} />{phone}</span>}
           </div>
         </div>
       </div>
