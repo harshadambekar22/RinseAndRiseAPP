@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { GoogleLogin } from '@react-oauth/google'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
 import Icon from '../components/Icon'
 import LoadingOverlay from '../components/LoadingOverlay'
+import GoogleLoginButton from '../components/GoogleLoginButton'
 
 // Sign-in is often near-instant, which means the loading icon flashes by
 // too fast to notice. Hold the busy state open for at least this long so
@@ -86,7 +86,7 @@ export default function Login() {
           <>
             <div className="divider-or"><span>or</span></div>
             <div className="google-wrap">
-              <GoogleLogin onSuccess={onGoogle} onError={() => setError('Google sign-in failed.')} width="320" />
+              <GoogleLoginButton onSuccess={onGoogle} onError={() => setError('Google sign-in failed.')} />
             </div>
           </>
         )}

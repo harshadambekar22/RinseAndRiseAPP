@@ -86,8 +86,9 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; overflow-x: hidden; }
 body {
+  width: 100%;
   font-family: var(--font-body);
   color: var(--ink);
   background: var(--cloud);
@@ -171,14 +172,16 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 
 /* ---------- Header / navbar ---------- */
 .header { position: sticky; top: 0; z-index: 50; height: var(--header-h); background: var(--header-bg); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
-.header .container { height: 100%; display: flex; align-items: center; justify-content: space-between; }
-.brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); }
+.header .container { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); min-width: 0; flex-shrink: 1; }
+.brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brand:hover { text-decoration: none; }
-.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: grid; place-items: center; color: #fff; box-shadow: var(--shadow-sm); overflow: hidden; }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: grid; place-items: center; color: #fff; box-shadow: var(--shadow-sm); overflow: hidden; flex-shrink: 0; }
 .nav-links { display: none; gap: 4px; align-items: center; }
+.nav-mobile-link { display: inline-flex; }
 .nav-links a { padding: 8px 12px; border-radius: 8px; color: var(--ink-soft); font-weight: 500; }
 .nav-links a:hover, .nav-links a.active { background: var(--mist); color: var(--ink); text-decoration: none; }
-.nav-actions { display: flex; align-items: center; gap: 8px; }
+.nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .avatar { width: 36px; height: 36px; border-radius: 999px; background: var(--primary-wash); color: var(--primary); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: .85rem; }
 
 /* Theme toggle button */
@@ -258,12 +261,31 @@ tbody tr:hover { background: var(--mist); }
 td.num { font-variant-numeric: tabular-nums; }
 
 /* ---------- Admin shell ---------- */
-.admin { display: grid; grid-template-columns: 1fr; gap: 0; min-height: calc(100vh - var(--header-h)); }
-.admin-side { background: var(--inverse-bg); color: var(--inverse-fg-dim); padding: 18px 12px; display: flex; gap: 6px; overflow-x: auto; }
-.admin-side a { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; color: var(--inverse-fg-dim); font-family: var(--font-display); font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.admin {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* Mobile: sidebar is a compact top bar (auto height), content takes the rest.
+     Without this, two "auto" grid rows in a min-height container get stretched
+     to share the leftover space equally — that's what turned each nav link
+     into a near-full-height tile. */
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  min-height: calc(100vh - var(--header-h));
+}
+.admin-side {
+  background: var(--inverse-bg); color: var(--inverse-fg-dim);
+  padding: 10px 12px; display: flex; align-items: center; gap: 4px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
+}
+.admin-side a {
+  display: inline-flex; align-items: center; gap: 8px; flex: none;
+  padding: 9px 13px; border-radius: 10px; color: var(--inverse-fg-dim);
+  font-family: var(--font-display); font-weight: 600; font-size: .85rem; white-space: nowrap;
+}
 .admin-side a:hover { background: rgba(255,255,255,.08); color: #fff; text-decoration: none; }
 .admin-side a.active { background: var(--primary-deep); color: var(--on-primary); }
-.admin-main { padding: clamp(18px, 3vw, 30px); }
+.admin-main { padding: clamp(16px, 3vw, 30px); min-width: 0; overflow-x: hidden; }
 
 /* ---------- Stat cards ---------- */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -505,7 +527,7 @@ td.num { font-variant-numeric: tabular-nums; }
 .kv:last-child { border-bottom: 0; }
 .kv .k { color: var(--ink-soft); }
 .kv .v { font-weight: 600; text-align: right; }
-.order-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
+.order-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
 .order-row + .order-row { margin-top: 10px; }
 
 /* ---- Width helper for focused pages ---- */
@@ -521,11 +543,13 @@ td.num { font-variant-numeric: tabular-nums; }
 /* ============ Responsive: laptop / desktop ============ */
 @media (min-width: 900px) {
   .nav-links { display: flex; }
+  .nav-mobile-link { display: none; }
   .hero-grid { grid-template-columns: 1.05fr .95fr; gap: 48px; }
   .cloth-grid { grid-template-columns: repeat(4, 1fr); }
   .stats { grid-template-columns: repeat(4, 1fr); }
-  .admin { grid-template-columns: 232px 1fr; }
-  .admin-side { flex-direction: column; overflow: visible; padding: 22px 14px; }
+  .admin { grid-template-columns: 232px 1fr; grid-template-rows: 1fr; }
+  .admin-side { flex-direction: column; align-items: stretch; overflow: visible; padding: 22px 14px; }
+  .admin-side a { flex: none; }
   .order-layout { display: grid; grid-template-columns: 1.4fr .9fr; gap: 24px; align-items: start; }
   .order-summary-sticky { position: sticky; top: calc(var(--header-h) + 20px); }
 }
