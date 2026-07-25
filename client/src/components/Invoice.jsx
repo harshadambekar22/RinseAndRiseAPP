@@ -25,10 +25,40 @@ export default function Invoice({ order, onClose }) {
         import('jspdf'),
       ])
       const node = printRef.current
-      // useCORS: the logo is fetched from the API's own origin (not the
-      // client's), so without CORS the canvas is tainted and html2canvas
-      // silently drops the image from the capture instead of throwing.
-      const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+      // The invoice's fonts (Plus Jakarta Sans, Inter) load async from Google
+      // Fonts with display:swap — the page paints with a fallback font first,
+      // then swaps once the real font arrives. If that swap hasn't finished
+      // yet, html2canvas freezes the capture mid-swap using the fallback
+      // font's metrics, which throws off icon/text alignment even though the
+      // live DOM looks fine moments later. Waiting for the Font Loading API
+      // here guarantees the capture happens after the swap.
+      if (document.fonts?.ready) await document.fonts.ready
+      // The logo is fetched from the API's own origin, so reading its pixels
+      // into a canvas requires a CORS-mode request. But every other <img> of
+      // this same logo on the site (Navbar, Footer, ...) loads it as a plain,
+      // non-CORS request — and browsers can reuse that cached response for a
+      // same-URL CORS-mode fetch, which then fails CORS even when the server
+      // sends the right header. onclone rewrites *just this captured copy* to
+      // a cache-busted URL so it's guaranteed to be a fresh CORS-mode fetch,
+      // without requiring crossOrigin (and therefore correct CORS config) for
+      // the logo everywhere it's used across the app.
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        onclone: (clonedDoc) => new Promise((resolve) => {
+          // Must wait for the re-fetched image to actually finish loading —
+          // html2canvas renders as soon as this callback settles, so a bare
+          // `img.src = ...` here (fire-and-forget) races the paint and can
+          // capture a blank frame if the CORS-mode fetch hasn't landed yet.
+          const img = clonedDoc.querySelector('.invoice-letterhead .mark img')
+          if (!img) return resolve()
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.crossOrigin = 'anonymous'
+          img.src += (img.src.includes('?') ? '&' : '?') + 'cors=1'
+        }),
+      })
       const imgData = canvas.toDataURL('image/png')
 
       // Measure an A4 page just to get its point dimensions, then decide
@@ -72,7 +102,7 @@ export default function Invoice({ order, onClose }) {
     <div className="bill invoice-print" ref={printRef}>
       <div className="invoice-letterhead">
         <span className="mark">
-          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" crossOrigin="anonymous" /> : <Icon name={projectIcon} size={20} />}
+          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" /> : <Icon name={projectIcon} size={20} />}
         </span>
         <div>
           <h2>{projectName}</h2>

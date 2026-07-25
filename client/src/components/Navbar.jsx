@@ -40,14 +40,7 @@ export default function Navbar() {
       <div className="container">
         <Link to="/" className="brand">
           <span className="brand-mark">
-            {/* crossOrigin must match every other <img> using this same logo URL
-                (Footer, BrandingPreview, Invoice) — the invoice's PDF export reads
-                the logo into a canvas, which requires a CORS-mode fetch. Browsers
-                cache the image by URL without partitioning by fetch mode, so a
-                plain (non-CORS) load here would poison the cache and make the
-                later CORS-mode fetch fail even though the server sends the right
-                Access-Control-Allow-Origin header. */}
-            {projectLogo ? <img src={imageUrl(projectLogo)} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={18} />}
+            {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={18} />}
           </span>
           <span className="brand-name">{projectName}</span>
         </Link>
