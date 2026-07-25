@@ -56,10 +56,11 @@ export default function Schedule() {
 
   // Saved address book. null = still loading. addingNew toggles between
   // picking a saved card and the map/form for a brand-new one — they're
-  // mutually exclusive.
+  // mutually exclusive. Saved addresses always take priority: the map/form
+  // only opens by itself when the customer has none saved yet.
   const [savedAddresses, setSavedAddresses] = useState(null)
   const [selectedAddressId, setSelectedAddressId] = useState(cart.address?.addressId ?? null)
-  const [addingNew, setAddingNew] = useState(!!cart.address && !cart.address.addressId)
+  const [addingNew, setAddingNew] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -70,8 +71,8 @@ export default function Schedule() {
       if (cart.address?.addressId && !data.some((a) => a.id === cart.address.addressId)) {
         setSelectedAddressId(null)
       }
-      // First-time customer with nothing saved yet — skip straight to the form.
-      if (data.length === 0 && !cart.address) setAddingNew(true)
+      // Nothing saved yet — skip straight to the form.
+      if (data.length === 0) setAddingNew(true)
     }).catch(() => setSavedAddresses([]))
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
