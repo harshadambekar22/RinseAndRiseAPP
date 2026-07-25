@@ -51,7 +51,18 @@ public class OrderService : IOrderService
         order.Status = dto.ScheduledPickupAt.HasValue ? OrderStatus.PickupScheduled : OrderStatus.Placed;
         order.ScheduledPickupAt = dto.ScheduledPickupAt;
 
-        if (dto.PickupAddress is { } a)
+        if (dto.AddressId.HasValue)
+        {
+            // Reusing a saved address — stamp the order from the DB's own
+            // copy of it (ownership-checked), not whatever the client also
+            // sent in PickupAddress, and don't insert a duplicate row.
+            var saved = await _db.Addresses.FirstOrDefaultAsync(x => x.Id == dto.AddressId.Value && x.UserId == user.Id)
+                        ?? throw new InvalidOperationException("Address not found.");
+            order.PickupAddressText = $"{saved.Line1}, {saved.Line2} {saved.City}, {saved.State} - {saved.Pincode}".Replace("  ", " ");
+            order.PickupLatitude = saved.Latitude;
+            order.PickupLongitude = saved.Longitude;
+        }
+        else if (dto.PickupAddress is { } a)
         {
             order.PickupAddressText = $"{a.Line1}, {a.Line2} {a.City}, {a.State} - {a.Pincode}".Replace("  ", " ");
             order.PickupLatitude = a.Latitude;

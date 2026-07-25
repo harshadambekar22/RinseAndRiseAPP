@@ -42,6 +42,10 @@ export default function Payment() {
       city: cart.address.city, state: cart.address.state, pincode: cart.address.pincode,
       latitude: cart.address.lat || 0, longitude: cart.address.lng || 0,
     },
+    // When the customer picked a saved address, the server re-derives the
+    // pickup fields from its own copy of that row rather than trusting the
+    // pickupAddress snapshot above.
+    addressId: cart.address?.addressId || null,
     scheduledPickupAt: cart.pickupAt || null,
     notes: null,
   })
