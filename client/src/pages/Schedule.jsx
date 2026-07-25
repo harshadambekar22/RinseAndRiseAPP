@@ -18,6 +18,11 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, 
 
 const DEFAULT_CENTER = { lat: 11.0168, lng: 76.9558 } // Coimbatore; change to your city
 
+// YYYY-MM-DD in the browser's local timezone — Date#toISOString() is UTC
+// and can land on the wrong day, which would let "today" reject itself
+// near midnight in timezones ahead of UTC.
+const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 // react-leaflet only reads MapContainer's `center` prop on first mount, so
 // panning after that (pin drop, "use my location") has to go through the
 // underlying Leaflet map instance directly.
@@ -40,7 +45,10 @@ export default function Schedule() {
   const [form, setForm] = useState(cart.address || {
     label: 'Home', line1: '', line2: '', city: '', state: '', pincode: '',
   })
-  const [pickupAt, setPickupAt] = useState(cart.pickupAt || '')
+  const todayStr = toDateStr(new Date())
+  // Drop a stale date leftover from an earlier visit to this page (the cart
+  // persists across sessions) if it's since fallen into the past.
+  const [pickupAt, setPickupAt] = useState(cart.pickupAt && cart.pickupAt >= todayStr ? cart.pickupAt : '')
   const [locating, setLocating] = useState(false)
   const [geocodeStatus, setGeocodeStatus] = useState(null) // null | 'looking' | 'failed' | 'empty'
   const geocodeSeq = useRef(0)
@@ -216,7 +224,8 @@ export default function Schedule() {
             <h3>Pickup date</h3>
             <div className="field">
               <label>When should we collect?</label>
-              <input className="input" type="date" value={pickupAt} onChange={(e) => setPickupAt(e.target.value)} />
+              <input className="input" type="date" min={todayStr} value={pickupAt}
+                onChange={(e) => setPickupAt(e.target.value)} />
             </div>
             <button className="btn btn-primary btn-block" disabled={!canContinue} onClick={proceed}>
               Continue to payment <ArrowRight size={16} />
