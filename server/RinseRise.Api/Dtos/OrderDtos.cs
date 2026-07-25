@@ -19,6 +19,7 @@ public record AddressInputDto(
 public record CreateOrderDto(
     [Required, MinLength(1)] List<OrderItemInputDto> Items,
     AddressInputDto? PickupAddress,
+    int? AddressId,
     DateTime? ScheduledPickupAt,
     string? Notes);
 

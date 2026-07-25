@@ -7,9 +7,10 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import 'leaflet/dist/leaflet.css'
-import { MapPin, ArrowRight, Locate } from 'lucide-react'
+import { MapPin, ArrowRight, ArrowLeft, Locate, Plus, Trash2 } from 'lucide-react'
 import { getCart, saveCart, cartCount } from '../data/cart'
 import { useSettings } from '../context/SettingsContext'
+import api from '../api/client'
 
 // Leaflet's default marker icon references image paths that don't resolve
 // once Vite fingerprints/bundles them — point it at the imported assets instead.
@@ -52,6 +53,36 @@ export default function Schedule() {
   const [locating, setLocating] = useState(false)
   const [geocodeStatus, setGeocodeStatus] = useState(null) // null | 'looking' | 'failed' | 'empty'
   const geocodeSeq = useRef(0)
+
+  // Saved address book. null = still loading. addingNew toggles between
+  // picking a saved card and the map/form for a brand-new one — they're
+  // mutually exclusive.
+  const [savedAddresses, setSavedAddresses] = useState(null)
+  const [selectedAddressId, setSelectedAddressId] = useState(cart.address?.addressId ?? null)
+  const [addingNew, setAddingNew] = useState(!!cart.address && !cart.address.addressId)
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/addresses').then(({ data }) => {
+      if (cancelled) return
+      setSavedAddresses(data)
+      // The previously-picked saved address may have since been deleted.
+      if (cart.address?.addressId && !data.some((a) => a.id === cart.address.addressId)) {
+        setSelectedAddressId(null)
+      }
+      // First-time customer with nothing saved yet — skip straight to the form.
+      if (data.length === 0 && !cart.address) setAddingNew(true)
+    }).catch(() => setSavedAddresses([]))
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const deleteAddress = async (id) => {
+    if (!confirm('Delete this address?')) return
+    await api.delete(`/addresses/${id}`)
+    setSavedAddresses((list) => list.filter((a) => a.id !== id))
+    if (selectedAddressId === id) setSelectedAddressId(null)
+  }
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -122,11 +153,21 @@ export default function Schedule() {
     )
   }
 
-  const canContinue = form.line1.trim() && form.city.trim() && form.pincode.trim() && pickupAt
+  const canContinue = addingNew
+    ? form.line1.trim() && form.city.trim() && form.pincode.trim() && pickupAt
+    : selectedAddressId != null && pickupAt
 
   const proceed = () => {
     const next = getCart()
-    next.address = { ...form, lat: marker.lat, lng: marker.lng }
+    if (addingNew) {
+      next.address = { ...form, lat: marker.lat, lng: marker.lng }
+    } else {
+      const a = savedAddresses.find((x) => x.id === selectedAddressId)
+      next.address = {
+        addressId: a.id, label: a.label, line1: a.line1, line2: a.line2,
+        city: a.city, state: a.state, pincode: a.pincode, lat: a.latitude, lng: a.longitude,
+      }
+    }
     next.pickupAt = pickupAt
     saveCart(next)
     navigate('/payment')
@@ -145,10 +186,58 @@ export default function Schedule() {
     <main className="container page">
       <span className="eyebrow">Step 2 of 3</span>
       <h1>Schedule your pickup</h1>
-      <p>Drop a pin where we should collect your clothes, then pick a date.</p>
+      <p>Choose where we should collect your clothes, then pick a date.</p>
 
       <div className="order-layout">
         <div className="stack">
+          {!addingNew && (
+            <div className="panel">
+              <div className="row" style={{ marginBottom: 12 }}>
+                <MapPin size={18} color="var(--primary-deep)" />
+                <strong style={{ fontFamily: 'var(--font-display)' }}>Pickup address</strong>
+              </div>
+              {savedAddresses === null ? (
+                <div className="loading-wrap"><LoadingIcon /></div>
+              ) : (
+                <div className="address-grid">
+                  {savedAddresses.map((a) => (
+                    <div
+                      key={a.id}
+                      className={`address-card ${selectedAddressId === a.id ? 'selected' : ''}`}
+                      onClick={() => { setSelectedAddressId(a.id); setAddingNew(false) }}
+                    >
+                      <button
+                        type="button" className="btn btn-ghost btn-sm danger address-card-delete"
+                        onClick={(e) => { e.stopPropagation(); deleteAddress(a.id) }}
+                        aria-label={`Delete ${a.label}`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      <div className="address-card-label">{a.label}</div>
+                      <div className="address-card-text">
+                        {a.line1}{a.line2 ? `, ${a.line2}` : ''}, {a.city} {a.pincode}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="address-card add-new" onClick={() => { setAddingNew(true); setSelectedAddressId(null) }}>
+                    <Plus size={18} /> Add new address
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {addingNew && (
+          <>
+          {savedAddresses && savedAddresses.length > 0 && (
+            <button
+              type="button" className="btn btn-ghost btn-sm"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={() => setAddingNew(false)}
+            >
+              <ArrowLeft size={14} /> Use a saved address
+            </button>
+          )}
           <div className="panel">
             <div className="between" style={{ marginBottom: 12 }}>
               <div className="row">
@@ -217,6 +306,8 @@ export default function Schedule() {
               <input className="input" inputMode="numeric" maxLength={6} value={form.pincode} onChange={(e) => update('pincode', e.target.value)} />
             </div>
           </div>
+          </>
+          )}
         </div>
 
         <aside className="order-summary-sticky">
