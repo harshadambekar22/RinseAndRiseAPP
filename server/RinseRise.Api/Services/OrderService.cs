@@ -40,6 +40,9 @@ public class OrderService : IOrderService
         var user = await _db.Users.FindAsync(userId)
                    ?? throw new InvalidOperationException("User not found.");
 
+        if (dto.ScheduledPickupAt.HasValue && dto.ScheduledPickupAt.Value.Date < DateTime.UtcNow.Date)
+            throw new InvalidOperationException("Pickup date can't be in the past.");
+
         var order = await BuildOrderAsync(dto.Items, OrderChannel.Online);
         order.UserId = user.Id;
         order.CustomerName = user.Name;
