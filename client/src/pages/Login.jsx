@@ -61,6 +61,11 @@ export default function Login() {
             Password updated. Sign in with your new password.
           </div>
         )}
+        {location.state?.sessionExpired && (
+          <div className="alert-error" style={{ marginBottom: 14 }} role="alert">
+            Your session has expired. Please sign in again.
+          </div>
+        )}
         {error && <div className="alert-error" role="alert">{error}</div>}
 
         <form onSubmit={submit} className="stack-sm">
