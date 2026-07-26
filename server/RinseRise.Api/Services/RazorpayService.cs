@@ -13,6 +13,12 @@ public interface IPaymentService
 {
     Task<RazorpayOrderResponseDto> CreateRazorpayOrderAsync(int orderId);
     Task<bool> VerifyAndMarkPaidAsync(VerifyPaymentDto dto);
+
+    /// <summary>Handles a Razorpay webhook delivery: verifies its signature against the
+    /// raw body, then reconciles Order/Payment status from the event. Returns false only
+    /// when the signature doesn't check out (controller should then return 400 so Razorpay
+    /// knows to fix its config — never retries help there).</summary>
+    Task<bool> ProcessWebhookAsync(string rawBody, string? signature);
 }
 
 /// <summary>
@@ -38,6 +44,9 @@ public class RazorpayService : IPaymentService
     private async Task<(string keyId, string keySecret)> KeysAsync() => (
         await _settings.GetOrConfigAsync(SettingKeys.RazorpayKeyId, "Razorpay:KeyId"),
         await _settings.GetOrConfigAsync(SettingKeys.RazorpayKeySecret, "Razorpay:KeySecret"));
+
+    private Task<string> WebhookSecretAsync() =>
+        _settings.GetOrConfigAsync(SettingKeys.RazorpayWebhookSecret, "Razorpay:WebhookSecret");
 
     public async Task<RazorpayOrderResponseDto> CreateRazorpayOrderAsync(int orderId)
     {
@@ -133,6 +142,109 @@ public class RazorpayService : IPaymentService
         if (string.IsNullOrEmpty(secret)) return false;
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{orderId}|{paymentId}"));
+        var expected = Convert.ToHexString(hash).ToLowerInvariant();
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(expected),
+            Encoding.UTF8.GetBytes(signature.ToLowerInvariant()));
+    }
+
+    /// <summary>
+    /// Server-to-server source of truth for payment/refund status. The client-driven
+    /// /verify call above only fires if the customer's browser is still around when
+    /// checkout finishes — it misses payments that settle asynchronously (UPI collect
+    /// requests, net-banking), a closed tab/dropped network right after a successful
+    /// charge, and refunds issued from the Razorpay dashboard. This handler covers all
+    /// of those by reacting to the events Razorpay pushes to /payments/razorpay/webhook.
+    /// Docs: https://razorpay.com/docs/webhooks/
+    /// </summary>
+    public async Task<bool> ProcessWebhookAsync(string rawBody, string? signature)
+    {
+        var webhookSecret = await WebhookSecretAsync();
+        if (string.IsNullOrWhiteSpace(webhookSecret) || webhookSecret.StartsWith("YOUR_"))
+        {
+            _log.LogWarning("Razorpay webhook received but no webhook secret is configured — ignoring.");
+            return false;
+        }
+        if (!VerifyWebhookSignature(rawBody, signature, webhookSecret))
+        {
+            _log.LogWarning("Razorpay webhook signature verification failed.");
+            return false;
+        }
+
+        using var doc = JsonDocument.Parse(rawBody);
+        var root = doc.RootElement;
+        var eventName = root.TryGetProperty("event", out var evEl) ? evEl.GetString() ?? "" : "";
+
+        // payment.*, order.paid and refund.* deliveries all carry a "payment" entity
+        // in their payload, which is all we need to locate the order.
+        if (!root.TryGetProperty("payload", out var payloadEl) ||
+            !payloadEl.TryGetProperty("payment", out var paymentEl) ||
+            !paymentEl.TryGetProperty("entity", out var entity))
+        {
+            _log.LogInformation("Razorpay webhook event {Event} has no payment entity — nothing to reconcile.", eventName);
+            return true;
+        }
+
+        var razorpayOrderId = entity.TryGetProperty("order_id", out var oid) ? oid.GetString() : null;
+        var razorpayPaymentId = entity.TryGetProperty("id", out var pid) ? pid.GetString() : null;
+        if (string.IsNullOrEmpty(razorpayOrderId)) return true;
+
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.RazorpayOrderId == razorpayOrderId);
+        if (order is null)
+        {
+            _log.LogWarning("Razorpay webhook {Event} for unknown order {OrderId} — nothing to reconcile.", eventName, razorpayOrderId);
+            return true; // ack so Razorpay stops retrying; we truly have no matching order
+        }
+
+        var payment = await _db.Payments
+            .Where(p => p.ProviderOrderId == razorpayOrderId)
+            .OrderByDescending(p => p.Id).FirstOrDefaultAsync();
+
+        switch (eventName)
+        {
+            case "payment.captured":
+            case "order.paid":
+                order.PaymentStatus = PaymentStatus.Paid;
+                if (!string.IsNullOrEmpty(razorpayPaymentId)) order.RazorpayPaymentId = razorpayPaymentId;
+                if (order.Status == OrderStatus.Placed) order.Status = OrderStatus.PickupScheduled;
+                if (payment is not null)
+                {
+                    payment.Status = PaymentStatus.Paid;
+                    if (!string.IsNullOrEmpty(razorpayPaymentId)) payment.ProviderPaymentId = razorpayPaymentId;
+                }
+                break;
+
+            case "payment.failed":
+                // Never let a stale/late failure event downgrade an order that
+                // another (successful) payment attempt already settled.
+                if (order.PaymentStatus != PaymentStatus.Paid) order.PaymentStatus = PaymentStatus.Failed;
+                if (payment is not null && payment.Status != PaymentStatus.Paid) payment.Status = PaymentStatus.Failed;
+                break;
+
+            case "refund.created":
+            case "refund.processed":
+                order.PaymentStatus = PaymentStatus.Refunded;
+                if (payment is not null) payment.Status = PaymentStatus.Refunded;
+                break;
+
+            default:
+                _log.LogInformation("Razorpay webhook event {Event} received — no status change defined for it.", eventName);
+                return true;
+        }
+
+        order.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>HMAC-SHA256 of the raw request body keyed with the webhook secret must equal
+    /// the X-Razorpay-Signature header — different scheme (and secret) than the Checkout
+    /// handler's per-payment signature in <see cref="VerifySignature"/>.</summary>
+    private static bool VerifyWebhookSignature(string rawBody, string? signature, string secret)
+    {
+        if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(signature)) return false;
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody));
         var expected = Convert.ToHexString(hash).ToLowerInvariant();
         return CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(expected),

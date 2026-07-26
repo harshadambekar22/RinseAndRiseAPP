@@ -15,10 +15,13 @@ const SECTIONS = [
   },
   {
     title: 'Razorpay',
-    description: 'Card / UPI / net-banking checkout. Without a secret key, payments run in mock mode.',
+    description: 'Card / UPI / net-banking checkout. Without a secret key, payments run in mock mode. ' +
+      'The webhook secret lets Razorpay push payment/refund status updates to /api/payments/razorpay/webhook ' +
+      'even if the customer closes the browser mid-payment — set the same value on Settings → Webhooks in the Razorpay dashboard.',
     fields: [
       { key: 'razorpayKeyId', label: 'Key ID', placeholder: 'rzp_test_xxxxx', secret: false },
       { key: 'razorpayKeySecret', label: 'Key secret', placeholder: '••••••••', secret: true },
+      { key: 'razorpayWebhookSecret', label: 'Webhook secret', placeholder: '••••••••', secret: true },
     ],
   },
   {
