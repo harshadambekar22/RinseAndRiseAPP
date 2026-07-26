@@ -46,6 +46,7 @@ public static class SettingKeys
     public const string GoogleClientId = "GoogleClientId";
     public const string RazorpayKeyId = "RazorpayKeyId";
     public const string RazorpayKeySecret = "RazorpayKeySecret";
+    public const string RazorpayWebhookSecret = "RazorpayWebhookSecret";
     public const string TwilioAccountSid = "TwilioAccountSid";
     public const string TwilioAuthToken = "TwilioAuthToken";
     public const string TwilioWhatsAppFrom = "TwilioWhatsAppFrom";
