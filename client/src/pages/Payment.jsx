@@ -1,7 +1,7 @@
 import LoadingIcon from '../components/LoadingIcon'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, CreditCard, Smartphone, QrCode, Info, ArrowLeft } from 'lucide-react'
+import { ShieldCheck, CreditCard, Smartphone, QrCode, Info, ArrowLeft, Banknote } from 'lucide-react'
 import api from '../api/client'
 import { getCart, clearCart, cartSubtotal, cartCount } from '../data/cart'
 import { useSettings } from '../context/SettingsContext'
@@ -22,11 +22,12 @@ function loadRazorpayScript() {
 
 export default function Payment() {
   const navigate = useNavigate()
-  const { projectName } = useSettings()
+  const { projectName, payAtPickupEnabled } = useSettings()
   const cart = getCart()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('') // friendly progress text
+  const [payMethod, setPayMethod] = useState('online') // online | payAtPickup
 
   const subtotal = cartSubtotal(cart)
   const tax = Math.round(subtotal * TAX_RATE * 100) / 100
@@ -48,6 +49,7 @@ export default function Payment() {
     addressId: cart.address?.addressId || null,
     scheduledPickupAt: cart.pickupAt || null,
     notes: null,
+    paymentMethod: payMethod === 'payAtPickup' ? 'PayAtPickup' : 'Online',
   })
 
   const verifyAndFinish = async (orderId, payload) => {
@@ -63,6 +65,14 @@ export default function Payment() {
       // 1) Create the order in our system.
       setStatus('Creating your order…')
       const { data: order } = await api.post('/orders', buildOrderPayload())
+
+      // Pay at pickup — the order is placed as-is (Pending), no Razorpay
+      // checkout at all. The invoice/success page shows the "pay at pickup" note.
+      if (payMethod === 'payAtPickup') {
+        clearCart()
+        navigate(`/order/success/${order.id}`, { replace: true })
+        return
+      }
 
       // 2) Ask the backend for a Razorpay order (or a MOCK one if keys aren't set).
       setStatus('Setting up payment…')
@@ -135,6 +145,24 @@ export default function Payment() {
 
       <div className="order-layout">
         <div className="stack">
+          {payAtPickupEnabled && (
+            <div className="panel">
+              <div className="row" style={{ marginBottom: 12 }}>
+                <Banknote size={18} color="var(--primary-deep)" />
+                <strong style={{ fontFamily: 'var(--font-display)' }}>How would you like to pay?</strong>
+              </div>
+              <div className="chip-row">
+                <button type="button" className={`chip ${payMethod === 'online' ? 'active' : ''}`} onClick={() => setPayMethod('online')}>
+                  <CreditCard size={15} /> Pay online now
+                </button>
+                <button type="button" className={`chip ${payMethod === 'payAtPickup' ? 'active' : ''}`} onClick={() => setPayMethod('payAtPickup')}>
+                  <Banknote size={15} /> Pay at pickup
+                </button>
+              </div>
+            </div>
+          )}
+
+          {payMethod === 'online' ? (
           <div className="panel">
             <div className="row" style={{ marginBottom: 12 }}>
               <ShieldCheck size={18} color="var(--primary-deep)" />
@@ -156,6 +184,18 @@ export default function Payment() {
               marks the order paid so you can see the full flow. Add your keys in <code>appsettings.json</code> to take real payments.
             </div>
           </div>
+          ) : (
+          <div className="panel">
+            <div className="row" style={{ marginBottom: 12 }}>
+              <Banknote size={18} color="var(--primary-deep)" />
+              <strong style={{ fontFamily: 'var(--font-display)' }}>Pay at pickup</strong>
+            </div>
+            <p className="muted" style={{ marginTop: 0 }}>
+              We'll place your order now and collect payment (cash, UPI or card) when we
+              come to pick up your clothes.
+            </p>
+          </div>
+          )}
 
           <div className="panel">
             <h3 style={{ marginTop: 0 }}>Pickup</h3>
@@ -187,7 +227,7 @@ export default function Payment() {
                 <div className="grand"><span style={{ display:'flex', justifyContent:'space-between', width:'100%' }}><span>Total</span><span>₹{total.toFixed(2)}</span></span></div>
               </div>
               <button className="btn btn-accent btn-block" style={{ marginTop: 16 }} disabled={busy} onClick={pay}>
-                {busy ? (status || 'Processing…') : `Pay ₹${total.toFixed(2)}`}
+                {busy ? (status || 'Processing…') : payMethod === 'payAtPickup' ? 'Place order' : `Pay ₹${total.toFixed(2)}`}
               </button>
               {busy && <div className="loading-wrap" style={{ marginTop: 10 }}><LoadingIcon /><span>{status}</span></div>}
             </div>

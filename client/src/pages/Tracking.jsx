@@ -19,6 +19,7 @@ export default function Tracking() {
   const { id } = useParams()
   const [order, setOrder] = useState(null)
   const [error, setError] = useState('')
+  const [cancelError, setCancelError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
 
   const load = () => {
@@ -29,6 +30,17 @@ export default function Tracking() {
       .finally(() => setRefreshing(false))
   }
   useEffect(load, [id])
+
+  const cancelOrder = async () => {
+    if (!confirm('Cancel this order?')) return
+    setCancelError('')
+    try {
+      const { data } = await api.post(`/orders/${id}/cancel`)
+      setOrder(data)
+    } catch (err) {
+      setCancelError(err?.response?.data?.message || 'Could not cancel this order.')
+    }
+  }
 
   if (error) return <main className="container page"><div className="alert-error">{error}</div></main>
   if (!order) return <main className="container page"><div className="loading-wrap"><LoadingIcon /><span>Loading…</span></div></main>
@@ -44,10 +56,19 @@ export default function Tracking() {
           <h1 style={{ marginBottom: 2 }}>Track your order</h1>
           <p className="muted" style={{ marginTop: 0 }}>Placed {new Date(order.createdAt).toLocaleString()}</p>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={load} disabled={refreshing}>
-          <RefreshCw size={15} /> {refreshing ? 'Refreshing…' : 'Refresh'}
-        </button>
+        <div className="row" style={{ gap: 8 }}>
+          {order.status === 'PickupScheduled' && (
+            <button className="btn btn-ghost btn-sm danger" onClick={cancelOrder}>
+              <XCircle size={15} /> Cancel order
+            </button>
+          )}
+          <button className="btn btn-ghost btn-sm" onClick={load} disabled={refreshing}>
+            <RefreshCw size={15} /> {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </div>
       </div>
+
+      {cancelError && <div className="alert-error" style={{ marginTop: 12 }}>{cancelError}</div>}
 
       <div className="card card-pad" style={{ marginTop: 16 }}>
         {cancelled ? (

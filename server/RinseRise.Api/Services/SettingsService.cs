@@ -57,6 +57,8 @@ public class SettingsService : ISettingsService
 
     public async Task<PublicSettingsDto> GetPublicAsync() => new(
         await GetBoolAsync(SettingKeys.PickupSchedulingEnabled),
+        await GetBoolAsync(SettingKeys.SendBillEnabled, true),
+        await GetBoolAsync(SettingKeys.PayAtPickupEnabled),
         await GetAsync(SettingKeys.BusinessPhone) ?? string.Empty,
         await GetAsync(SettingKeys.HomeHeadline) ?? "Fresh clothes, without the trip.",
         await GetAsync(SettingKeys.ProjectName) ?? "Rinse & Rise",

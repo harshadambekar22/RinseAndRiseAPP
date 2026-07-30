@@ -111,6 +111,8 @@ public class AppDbContext : DbContext
     {
         b.Entity<Setting>().HasData(
             new Setting { Key = SettingKeys.PickupSchedulingEnabled, Value = "false" },
+            new Setting { Key = SettingKeys.SendBillEnabled,         Value = "true" },
+            new Setting { Key = SettingKeys.PayAtPickupEnabled,      Value = "false" },
             new Setting { Key = SettingKeys.BusinessPhone,           Value = "+91 90000 00000" },
             new Setting { Key = SettingKeys.HomeHeadline,            Value = "Fresh clothes, without the trip." },
             new Setting { Key = SettingKeys.ProjectName,             Value = "Rinse & Rise" },

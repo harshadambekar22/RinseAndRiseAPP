@@ -32,6 +32,22 @@ const FEATURES = [
       'services and prices, but the booking flow is hidden and they see a "call to book" ' +
       'prompt with your business phone instead.',
   },
+  {
+    key: 'sendBillEnabled',
+    title: 'Send bill (WhatsApp)',
+    description:
+      'When on, bills are pushed to the customer\'s WhatsApp (falls back to SMS) — both ' +
+      'for counter billing at the shop and for online orders once payment is confirmed. ' +
+      'When off, no bill is sent either way; you can still resend one manually per order.',
+  },
+  {
+    key: 'payAtPickupEnabled',
+    title: 'Pay at pickup',
+    description:
+      'When on, customers scheduling a pickup can skip online payment and choose to pay ' +
+      'when their clothes are collected instead. When off, online orders must be paid for ' +
+      'upfront via Razorpay.',
+  },
 ]
 
 export default function Features() {

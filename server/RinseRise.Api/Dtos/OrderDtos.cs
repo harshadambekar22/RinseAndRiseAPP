@@ -21,7 +21,8 @@ public record CreateOrderDto(
     AddressInputDto? PickupAddress,
     int? AddressId,
     DateTime? ScheduledPickupAt,
-    string? Notes);
+    string? Notes,
+    string PaymentMethod = "Online"); // Online | PayAtPickup
 
 public record UpdateStatusDto([Required] string Status);
 
@@ -48,4 +49,5 @@ public record OrderViewDto(
     string? PickupAddressText,
     DateTime? ScheduledPickupAt,
     DateTime CreatedAt,
-    List<OrderItemViewDto> Items);
+    List<OrderItemViewDto> Items,
+    string PaymentProvider);

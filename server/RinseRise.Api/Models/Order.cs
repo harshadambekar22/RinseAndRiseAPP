@@ -47,6 +47,16 @@ public class Order
     public string? RazorpayOrderId { get; set; }
     public string? RazorpayPaymentId { get; set; }
 
+    /// <summary>How this order's payment was set up: "Razorpay", "Counter", or
+    /// "PayAtPickup" — lets the client distinguish a deliberate pay-at-pickup
+    /// order from an abandoned/failed online checkout without joining Payments.</summary>
+    [MaxLength(20)]
+    public string PaymentProvider { get; set; } = "Razorpay";
+
+    /// <summary>Idempotency guard so the WhatsApp bill isn't sent twice when both
+    /// the client-driven /verify call and the Razorpay webhook settle one payment.</summary>
+    public DateTime? BillSentAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
