@@ -55,7 +55,7 @@ export default function ShopBilling() {
     if (next.pincode.trim().length === 6 || (next.line2.trim() && next.city.trim())) {
       forwardGeocode.search({
         street: [next.line1, next.line2].filter(Boolean).join(', '),
-        city: next.city, state: next.state, postalcode: next.pincode,
+        area: next.line2, city: next.city, state: next.state, postalcode: next.pincode,
       })
     }
   }

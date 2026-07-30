@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Debounced forward geocoding (address parts -> lat/lng) via OSM's free
-// Nominatim /search endpoint, using its *structured* query params (street/
-// city/state/postalcode) rather than one free-text string.
+// Nominatim /search endpoint. Three-tier fallback chain, each tier only
+// tried if the previous one came back empty:
 //
-// Nominatim's structured `street` param needs an exact housenumber+streetname
-// match against OSM's addr:* tags — unlike free-text search it does NOT
-// degrade gracefully, so ANY street value that doesn't match exactly (a flat/
-// building name, or even a real locality name like "RS Puram" that isn't
-// tagged as a formal street) makes the *whole* query return zero results,
-// even though city+postalcode alone would have matched fine. So: try with
-// street first (it nails well-known named roads), and if that comes back
-// empty, silently retry without it — city+postalcode reliably resolves to a
-// usable area-level pin, which the caller's draggable marker can then be
-// fine-tuned from.
+//  1. Structured search with the full street (flat/building + area) — nails
+//     well-known named roads exactly, but Nominatim's structured `street`
+//     param needs an EXACT housenumber+streetname match against OSM's addr:*
+//     tags and does NOT degrade gracefully, so a flat/building name that
+//     isn't in OSM's data (almost always the case) makes the whole query
+//     return zero results.
+//  2. Free-text search with just the locality/area name (not the flat/
+//     building name) plus city/state/pincode — Nominatim's free-text engine
+//     tolerates fuzzy/partial matches far better than the structured API, so
+//     this correctly differentiates between areas that share one pincode.
+//  3. Structured search with the pincode ALONE (deliberately without city).
+//     Combining postalcode with city makes Nominatim prefer the city-level
+//     match and silently discard the pincode — every address in a city then
+//     collapses onto the exact same city-centre point regardless of which
+//     pincode was actually typed, which looks exactly like "the pin isn't
+//     updating" even though a real request did fire and "succeed" each time.
 //
 // Mirrors the reverse-geocode error handling used elsewhere in the app:
 // sequence-numbered responses so a stale lookup can never clobber a newer
@@ -28,6 +34,7 @@ export function useForwardGeocode(onFound, { debounceMs = 600, timeoutMs = 8000 
   const search = useCallback((address) => {
     clearTimeout(timer.current)
     const street = (address?.street || '').trim()
+    const area = (address?.area || '').trim()
     const city = (address?.city || '').trim()
     const state = (address?.state || '').trim()
     const postalcode = (address?.postalcode || '').trim()
@@ -42,35 +49,47 @@ export function useForwardGeocode(onFound, { debounceMs = 600, timeoutMs = 8000 
 
       const controller = new AbortController()
       const abortTimer = setTimeout(() => controller.abort(), timeoutMs)
+      let anyHttpError = false
 
-      const query = (withStreet) => {
+      const runStructured = async (opts) => {
         const params = new URLSearchParams({ format: 'jsonv2', limit: '1', country: 'India' })
-        if (withStreet && street) params.set('street', street)
-        if (city) params.set('city', city)
-        if (state) params.set('state', state)
-        if (postalcode) params.set('postalcode', postalcode)
-        return fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, { signal: controller.signal })
+        if (opts.street) params.set('street', opts.street)
+        if (opts.city) params.set('city', opts.city)
+        if (opts.state) params.set('state', opts.state)
+        if (opts.postalcode) params.set('postalcode', opts.postalcode)
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, { signal: controller.signal })
+        if (!res.ok) { anyHttpError = true; return [] }
+        return res.json()
+      }
+      const runFreeText = async (q) => {
+        const params = new URLSearchParams({ format: 'jsonv2', limit: '1', q })
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, { signal: controller.signal })
+        if (!res.ok) { anyHttpError = true; return [] }
+        return res.json()
       }
 
       try {
-        let res = await query(true)
-        if (mySeq !== seq.current) return // a newer search superseded this response
-        let data = res.ok ? await res.json() : []
+        let data = []
 
-        // A street value is either exact or the whole query fails — retry
-        // without it so city+postalcode can still land a usable area pin.
-        if (data.length === 0 && street) {
-          res = await query(false)
+        if (street && city) {
+          data = await runStructured({ street, city, state, postalcode })
           if (mySeq !== seq.current) return
-          data = res.ok ? await res.json() : []
         }
 
-        if (!res.ok) {
-          console.warn('[forwardGeocode] Nominatim returned', res.status, res.statusText)
-          setStatus('failed')
+        if (data.length === 0 && area && city) {
+          data = await runFreeText([area, city, state, postalcode].filter(Boolean).join(', '))
+          if (mySeq !== seq.current) return
+        }
+
+        if (data.length === 0 && postalcode) {
+          data = await runStructured({ postalcode })
+          if (mySeq !== seq.current) return
+        }
+
+        if (!data.length) {
+          setStatus(anyHttpError ? 'failed' : 'notfound')
           return
         }
-        if (!data.length) { setStatus('notfound'); return }
         setStatus('found')
         onFound(parseFloat(data[0].lat), parseFloat(data[0].lon), data[0].display_name)
       } catch (err) {
