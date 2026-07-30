@@ -49,9 +49,14 @@ export default function ShopBilling() {
   const updateDelivery = (k, v) => {
     const next = { ...deliveryForm, [k]: v }
     setDeliveryForm(next)
-    if (next.line1.trim() && next.pincode.trim().length === 6) {
-      const query = [next.line1, next.line2, next.city, next.state, next.pincode].filter(Boolean).join(', ')
-      forwardGeocode.search(query)
+    // Fire once there's a 6-digit pincode — don't also require line1 (the
+    // flat/building line), since that would silently block geocoding
+    // whenever it's left blank.
+    if (next.pincode.trim().length === 6 || (next.line2.trim() && next.city.trim())) {
+      forwardGeocode.search({
+        street: [next.line1, next.line2].filter(Boolean).join(', '),
+        city: next.city, state: next.state, postalcode: next.pincode,
+      })
     }
   }
 
@@ -265,6 +270,16 @@ export default function ShopBilling() {
               <AddressMapPicker marker={deliveryMarker} onSetPin={setDeliveryMarker} />
               {forwardGeocode.status === 'looking' && (
                 <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Finding this address on the map…</p>
+              )}
+              {forwardGeocode.status === 'notfound' && (
+                <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                  Couldn't find that exact address on the map — drag the pin to the right spot.
+                </p>
+              )}
+              {forwardGeocode.status === 'failed' && (
+                <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                  Couldn't look up that address right now — drag the pin to the right spot instead.
+                </p>
               )}
             </div>
           )}
