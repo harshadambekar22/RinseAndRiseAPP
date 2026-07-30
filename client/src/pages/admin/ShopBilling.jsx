@@ -4,6 +4,7 @@ import api from '../../api/client'
 import { useSettings } from '../../context/SettingsContext'
 import AddressMapPicker, { DEFAULT_CENTER } from '../../components/AddressMapPicker'
 import { useForwardGeocode } from '../../hooks/useForwardGeocode'
+import { usePincodeLookup } from '../../hooks/usePincodeLookup'
 
 const TAX_RATE = 0.18
 const FALLBACK = [
@@ -46,9 +47,17 @@ export default function ShopBilling() {
   const [deliveryMarker, setDeliveryMarker] = useState(DEFAULT_CENTER)
   const forwardGeocode = useForwardGeocode(useCallback((lat, lng) => setDeliveryMarker({ lat, lng }), []))
 
+  // Pincode -> city/state autofill, via India Post's official PIN code API
+  // (far more reliable for names than the map geocoder). Bypasses
+  // updateDelivery() so it can't re-trigger itself.
+  const pincodeLookup = usePincodeLookup(useCallback((info) => {
+    setDeliveryForm((f) => ({ ...f, city: info.city || f.city, state: info.state || f.state }))
+  }, []))
+
   const updateDelivery = (k, v) => {
     const next = { ...deliveryForm, [k]: v }
     setDeliveryForm(next)
+    if (k === 'pincode') pincodeLookup.lookup(v)
     // Fire once there's a 6-digit pincode — don't also require line1 (the
     // flat/building line), since that would silently block geocoding
     // whenever it's left blank.
@@ -265,6 +274,14 @@ export default function ShopBilling() {
               <div className="field">
                 <label>Pincode *</label>
                 <input className="input" inputMode="numeric" maxLength={6} value={deliveryForm.pincode} onChange={(e) => updateDelivery('pincode', e.target.value)} />
+                {pincodeLookup.status === 'looking' && (
+                  <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Looking up city/state…</p>
+                )}
+                {pincodeLookup.status === 'notfound' && (
+                  <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                    Couldn't recognise that pincode — please fill city/state in yourself.
+                  </p>
+                )}
               </div>
 
               <AddressMapPicker marker={deliveryMarker} onSetPin={setDeliveryMarker} />

@@ -7,6 +7,7 @@ import { useSettings } from '../context/SettingsContext'
 import api from '../api/client'
 import AddressMapPicker, { DEFAULT_CENTER } from '../components/AddressMapPicker'
 import { useForwardGeocode } from '../hooks/useForwardGeocode'
+import { usePincodeLookup } from '../hooks/usePincodeLookup'
 
 // YYYY-MM-DD in the browser's local timezone — Date#toISOString() is UTC
 // and can land on the wrong day, which would let "today" reject itself
@@ -66,9 +67,17 @@ export default function Schedule() {
   // pin it just placed.
   const forwardGeocode = useForwardGeocode(useCallback((lat, lng) => setMarker({ lat, lng }), []))
 
+  // Pincode -> city/state autofill, via India Post's official PIN code API
+  // (far more reliable for names than the map geocoder). Bypasses `update()`
+  // so it can't re-trigger itself.
+  const pincodeLookup = usePincodeLookup(useCallback((info) => {
+    setForm((f) => ({ ...f, city: info.city || f.city, state: info.state || f.state }))
+  }, []))
+
   const update = (k, v) => {
     const next = { ...form, [k]: v }
     setForm(next)
+    if (k === 'pincode') pincodeLookup.lookup(v)
     // Fire once there's a 6-digit pincode (a pincode alone is usually enough
     // to place a reasonable area pin) — don't also require line1, since a
     // blank/whitespace flat number would otherwise silently block geocoding
@@ -297,6 +306,14 @@ export default function Schedule() {
             <div className="field">
               <label>Pincode *</label>
               <input className="input" inputMode="numeric" maxLength={6} value={form.pincode} onChange={(e) => update('pincode', e.target.value)} />
+              {pincodeLookup.status === 'looking' && (
+                <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Looking up city/state…</p>
+              )}
+              {pincodeLookup.status === 'notfound' && (
+                <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                  Couldn't recognise that pincode — please fill city/state in yourself.
+                </p>
+              )}
             </div>
           </div>
           </>
