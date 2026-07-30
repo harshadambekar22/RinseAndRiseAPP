@@ -7,6 +7,8 @@ export const useSettings = () => useContext(SettingsContext)
 
 const DEFAULTS = {
   pickupSchedulingEnabled: false,
+  sendBillEnabled: true,
+  payAtPickupEnabled: false,
   businessPhone: '',
   headline: 'Fresh clothes, without the trip.',
   projectName: 'Rinse & Rise',

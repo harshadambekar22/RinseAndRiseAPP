@@ -33,11 +33,12 @@ public class RazorpayService : IPaymentService
     private readonly ISettingsService _settings;
     private readonly IHttpClientFactory _httpFactory;
     private readonly ILogger<RazorpayService> _log;
+    private readonly IOrderService _orders;
 
     public RazorpayService(AppDbContext db, ISettingsService settings,
-        IHttpClientFactory httpFactory, ILogger<RazorpayService> log)
+        IHttpClientFactory httpFactory, ILogger<RazorpayService> log, IOrderService orders)
     {
-        _db = db; _settings = settings; _httpFactory = httpFactory; _log = log;
+        _db = db; _settings = settings; _httpFactory = httpFactory; _log = log; _orders = orders;
     }
 
     // Admin → API Keys (Settings table) wins if set, else appsettings.json.
@@ -133,6 +134,7 @@ public class RazorpayService : IPaymentService
             payment.ProviderPaymentId = dto.RazorpayPaymentId;
         }
         await _db.SaveChangesAsync();
+        await _orders.SendBillIfDueAsync(order.Id, preferWhatsApp: true);
         return true;
     }
 
@@ -212,7 +214,10 @@ public class RazorpayService : IPaymentService
                     payment.Status = PaymentStatus.Paid;
                     if (!string.IsNullOrEmpty(razorpayPaymentId)) payment.ProviderPaymentId = razorpayPaymentId;
                 }
-                break;
+                order.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+                await _orders.SendBillIfDueAsync(order.Id, preferWhatsApp: true);
+                return true;
 
             case "payment.failed":
                 // Never let a stale/late failure event downgrade an order that

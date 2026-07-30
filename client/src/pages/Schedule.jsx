@@ -1,42 +1,17 @@
 import LoadingIcon from '../components/LoadingIcon'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
-import L from 'leaflet'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import 'leaflet/dist/leaflet.css'
 import { MapPin, ArrowRight, ArrowLeft, Locate, Plus, Trash2 } from 'lucide-react'
 import { getCart, saveCart, cartCount } from '../data/cart'
 import { useSettings } from '../context/SettingsContext'
 import api from '../api/client'
-
-// Leaflet's default marker icon references image paths that don't resolve
-// once Vite fingerprints/bundles them — point it at the imported assets instead.
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({ iconRetinaUrl: markerIcon2x, iconUrl: markerIcon, shadowUrl: markerShadow })
-
-const DEFAULT_CENTER = { lat: 11.0168, lng: 76.9558 } // Coimbatore; change to your city
+import AddressMapPicker, { DEFAULT_CENTER } from '../components/AddressMapPicker'
+import { useForwardGeocode } from '../hooks/useForwardGeocode'
 
 // YYYY-MM-DD in the browser's local timezone — Date#toISOString() is UTC
 // and can land on the wrong day, which would let "today" reject itself
 // near midnight in timezones ahead of UTC.
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
-// react-leaflet only reads MapContainer's `center` prop on first mount, so
-// panning after that (pin drop, "use my location") has to go through the
-// underlying Leaflet map instance directly.
-function RecenterMap({ center }) {
-  const map = useMap()
-  useEffect(() => { map.setView(center, map.getZoom()) }, [center, map])
-  return null
-}
-
-function ClickHandler({ onSet }) {
-  useMapEvents({ click(e) { onSet(e.latlng.lat, e.latlng.lng) } })
-  return null
-}
 
 export default function Schedule() {
   const navigate = useNavigate()
@@ -85,7 +60,22 @@ export default function Schedule() {
     if (selectedAddressId === id) setSelectedAddressId(null)
   }
 
-  const update = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  // Forward geocoding (typed address+pincode -> map pin) moves the marker
+  // silently — it must NOT call reverseGeocode, or the address the admin/user
+  // just typed would get overwritten mid-typing by the reverse lookup for the
+  // pin it just placed.
+  const forwardGeocode = useForwardGeocode(useCallback((lat, lng) => setMarker({ lat, lng }), []))
+
+  const update = (k, v) => {
+    const next = { ...form, [k]: v }
+    setForm(next)
+    // Only bother geocoding once there's enough to search on — a 6-digit
+    // pincode plus a flat/building line is a reasonable "they've typed enough" bar.
+    if (next.line1.trim() && next.pincode.trim().length === 6) {
+      const query = [next.line1, next.line2, next.city, next.state, next.pincode].filter(Boolean).join(', ')
+      forwardGeocode.search(query)
+    }
+  }
 
   // Best-effort fill of city/state/pincode from the dropped pin via OSM's
   // free Nominatim reverse-geocoder. Never blocks the flow — the fields
@@ -250,23 +240,8 @@ export default function Schedule() {
               </button>
             </div>
 
-            <MapContainer center={marker} zoom={14} scrollWheelZoom className="map-box">
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <Marker
-                position={marker}
-                draggable
-                eventHandlers={{ dragend: (e) => { const p = e.target.getLatLng(); setPin(p.lat, p.lng) } }}
-              />
-              <ClickHandler onSet={setPin} />
-              <RecenterMap center={marker} />
-            </MapContainer>
+            <AddressMapPicker marker={marker} onSetPin={setPin} />
 
-            <p className="muted" style={{ fontSize: '.8rem', margin: '8px 0 0' }}>
-              Tap the map or drag the pin to adjust. Lat {marker.lat.toFixed(4)}, Lng {marker.lng.toFixed(4)}
-            </p>
             {geocodeStatus === 'looking' && (
               <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Looking up address…</p>
             )}
@@ -274,6 +249,9 @@ export default function Schedule() {
               <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
                 Couldn't auto-fill the address for this pin — please fill it in below.
               </p>
+            )}
+            {forwardGeocode.status === 'looking' && (
+              <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Finding this address on the map…</p>
             )}
           </div>
 

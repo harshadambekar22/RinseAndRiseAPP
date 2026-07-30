@@ -55,4 +55,19 @@ public class OrdersController : ControllerBase
         }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+
+    /// <summary>The customer cancels their own order — only while it's still
+    /// waiting for pickup (status "PickupScheduled").</summary>
+    [Authorize]
+    [HttpPost("{id:int}/cancel")]
+    public async Task<ActionResult<OrderViewDto>> Cancel(int id)
+    {
+        if (!User.IsInRole("Admin") && !await _orders.IsOwnedByAsync(id, CurrentUserId)) return Forbid();
+        try
+        {
+            var updated = await _orders.CancelAsync(id);
+            return updated is null ? NotFound() : Ok(updated);
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 }

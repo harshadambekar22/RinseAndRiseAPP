@@ -1,7 +1,7 @@
 import LoadingIcon from '../components/LoadingIcon'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { CheckCircle2, MapPin } from 'lucide-react'
+import { CheckCircle2, MapPin, Banknote } from 'lucide-react'
 import api from '../api/client'
 import { useSettings } from '../context/SettingsContext'
 
@@ -31,16 +31,26 @@ export default function OrderSuccess() {
   }
 
   const paid = order.paymentStatus === 'Paid'
+  const payAtPickup = order.paymentProvider === 'PayAtPickup'
 
   return (
     <main className="container page narrow">
       <div className="center" style={{ marginBottom: 18 }}>
         <div className="success-mark"><CheckCircle2 size={34} /></div>
-        <h1 style={{ marginBottom: 4 }}>{paid ? 'Payment successful' : 'Order placed'}</h1>
+        <h1 style={{ marginBottom: 4 }}>
+          {paid ? 'Payment successful' : payAtPickup ? 'Order placed — pay at pickup' : 'Order placed'}
+        </h1>
         <p className="muted" style={{ marginTop: 0 }}>
           Thanks, {order.customerName?.split(' ')[0]}! Your order <strong>{order.orderNumber}</strong> is confirmed.
         </p>
       </div>
+
+      {payAtPickup && !paid && (
+        <div className="alert-info" style={{ maxWidth: 460, margin: '0 auto 18px' }}>
+          <Banknote size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} />
+          Pay at pickup — please keep ₹{order.total.toFixed(2)} ready (cash, UPI or card) when we collect your clothes.
+        </div>
+      )}
 
       <div className="bill" style={{ maxWidth: 460, margin: '0 auto' }}>
         <div className="bill-head">
@@ -62,7 +72,7 @@ export default function OrderSuccess() {
             <div className="t"><span>Subtotal</span><span>₹{order.subTotal.toFixed(2)}</span></div>
             <div className="t"><span>Tax</span><span>₹{order.taxAmount.toFixed(2)}</span></div>
             {order.deliveryFee > 0 && <div className="t"><span>Delivery</span><span>₹{order.deliveryFee.toFixed(2)}</span></div>}
-            <div className="grand"><span style={{ display:'flex', justifyContent:'space-between', width:'100%' }}><span>Total paid</span><span>₹{order.total.toFixed(2)}</span></span></div>
+            <div className="grand"><span style={{ display:'flex', justifyContent:'space-between', width:'100%' }}><span>{paid ? 'Total paid' : 'Total due'}</span><span>₹{order.total.toFixed(2)}</span></span></div>
           </div>
 
           {order.pickupAddressText && (

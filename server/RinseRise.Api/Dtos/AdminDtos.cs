@@ -9,7 +9,9 @@ public record ShopBillingDto(
     [Required] string CustomerPhone,
     [Required] string PaymentMethod,   // upi | card | qr | pos | cash
     bool SendWhatsApp = true,
-    string? Notes = null);
+    string? Notes = null,
+    string DeliveryMethod = "WalkIn",  // WalkIn | DoorDelivery
+    AddressInputDto? DeliveryAddress = null);
 
 public record UserViewDto(int Id, string Name, string Email, string? Phone, string Role, DateTime CreatedAt, int OrderCount);
 
