@@ -69,11 +69,15 @@ export default function Schedule() {
   const update = (k, v) => {
     const next = { ...form, [k]: v }
     setForm(next)
-    // Only bother geocoding once there's enough to search on — a 6-digit
-    // pincode plus a flat/building line is a reasonable "they've typed enough" bar.
-    if (next.line1.trim() && next.pincode.trim().length === 6) {
-      const query = [next.line1, next.line2, next.city, next.state, next.pincode].filter(Boolean).join(', ')
-      forwardGeocode.search(query)
+    // Fire once there's a 6-digit pincode (a pincode alone is usually enough
+    // to place a reasonable area pin) — don't also require line1, since a
+    // blank/whitespace flat number would otherwise silently block geocoding
+    // from ever running at all.
+    if (next.pincode.trim().length === 6 || (next.line2.trim() && next.city.trim())) {
+      forwardGeocode.search({
+        street: [next.line1, next.line2].filter(Boolean).join(', '),
+        city: next.city, state: next.state, postalcode: next.pincode,
+      })
     }
   }
 
@@ -252,6 +256,16 @@ export default function Schedule() {
             )}
             {forwardGeocode.status === 'looking' && (
               <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Finding this address on the map…</p>
+            )}
+            {forwardGeocode.status === 'notfound' && (
+              <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                Couldn't find that exact address on the map — drag the pin to the right spot.
+              </p>
+            )}
+            {forwardGeocode.status === 'failed' && (
+              <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                Couldn't look up that address right now — drag the pin to the right spot instead.
+              </p>
             )}
           </div>
 
