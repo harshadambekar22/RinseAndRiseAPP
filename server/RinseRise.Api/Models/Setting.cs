@@ -19,6 +19,7 @@ public static class SettingKeys
     public const string PickupSchedulingEnabled = "PickupSchedulingEnabled";
     public const string SendBillEnabled = "SendBillEnabled";
     public const string PayAtPickupEnabled = "PayAtPickupEnabled";
+    public const string GoogleSignInEnabled = "GoogleSignInEnabled";
     public const string BusinessPhone = "BusinessPhone";
     public const string HomeHeadline = "HomeHeadline";
 

@@ -27,7 +27,9 @@ export default function Payment() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('') // friendly progress text
-  const [payMethod, setPayMethod] = useState('online') // online | payAtPickup
+  // Pay-at-pickup is an admin-wide switch, not a customer choice: when it's on,
+  // online payment is hidden entirely and every order goes through as pay-at-pickup.
+  const payMethod = payAtPickupEnabled ? 'payAtPickup' : 'online'
 
   const subtotal = cartSubtotal(cart)
   const tax = Math.round(subtotal * TAX_RATE * 100) / 100
@@ -145,23 +147,6 @@ export default function Payment() {
 
       <div className="order-layout">
         <div className="stack">
-          {payAtPickupEnabled && (
-            <div className="panel">
-              <div className="row" style={{ marginBottom: 12 }}>
-                <Banknote size={18} color="var(--primary-deep)" />
-                <strong style={{ fontFamily: 'var(--font-display)' }}>How would you like to pay?</strong>
-              </div>
-              <div className="chip-row">
-                <button type="button" className={`chip ${payMethod === 'online' ? 'active' : ''}`} onClick={() => setPayMethod('online')}>
-                  <CreditCard size={15} /> Pay online now
-                </button>
-                <button type="button" className={`chip ${payMethod === 'payAtPickup' ? 'active' : ''}`} onClick={() => setPayMethod('payAtPickup')}>
-                  <Banknote size={15} /> Pay at pickup
-                </button>
-              </div>
-            </div>
-          )}
-
           {payMethod === 'online' ? (
           <div className="panel">
             <div className="row" style={{ marginBottom: 12 }}>
