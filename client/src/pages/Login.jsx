@@ -15,8 +15,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default function Login() {
   const { login, loginWithGoogle } = useAuth()
-  const { projectIcon, googleClientId } = useSettings()
-  const GOOGLE_ENABLED = !!googleClientId
+  const { projectIcon, googleClientId, googleSignInEnabled } = useSettings()
+  const GOOGLE_ENABLED = googleSignInEnabled && !!googleClientId
   const navigate = useNavigate()
   const location = useLocation()
   const redirectTo = location.state?.from || '/'

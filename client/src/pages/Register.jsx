@@ -8,8 +8,8 @@ import GoogleLoginButton from '../components/GoogleLoginButton'
 
 export default function Register() {
   const { register, loginWithGoogle } = useAuth()
-  const { projectIcon, googleClientId } = useSettings()
-  const GOOGLE_ENABLED = !!googleClientId
+  const { projectIcon, googleClientId, googleSignInEnabled } = useSettings()
+  const GOOGLE_ENABLED = googleSignInEnabled && !!googleClientId
   const navigate = useNavigate()
   const location = useLocation()
   const redirectTo = location.state?.from || '/'

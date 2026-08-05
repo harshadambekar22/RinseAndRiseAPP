@@ -48,6 +48,14 @@ const FEATURES = [
       'when their clothes are collected instead. When off, online orders must be paid for ' +
       'upfront via Razorpay.',
   },
+  {
+    key: 'googleSignInEnabled',
+    title: 'Google sign-in',
+    description:
+      'When on, the "Sign in with Google" button appears on the login and register pages ' +
+      '(requires a Google client id set under Admin → API Keys). When off, the button is ' +
+      'hidden and customers must use email/password.',
+  },
 ]
 
 export default function Features() {
