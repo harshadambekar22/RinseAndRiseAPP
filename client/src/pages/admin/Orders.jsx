@@ -64,6 +64,18 @@ export default function Orders() {
     }
   }
 
+  const markPaid = async (order) => {
+    setUpdatingId(order.id)
+    try {
+      const { data } = await api.post(`/admin/orders/${order.id}/mark-paid`)
+      setRows((rs) => rs.map((r) => (r.id === order.id ? data : r)))
+    } catch (err) {
+      window.alert(err?.response?.data?.message || 'Could not update the payment status.')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
   if (error) return <div className="alert-error">{error}</div>
   if (!rows) return <div className="loading-wrap"><LoadingIcon /><span>Loading orders…</span></div>
 
@@ -106,7 +118,21 @@ export default function Orders() {
                 <td><span className="badge badge-grey">{r.channel}</span></td>
                 <td className="num">{r.items.reduce((n, i) => n + i.quantity, 0)}</td>
                 <td className="num">₹{r.total.toFixed(2)}</td>
-                <td><span className={`badge ${r.paymentStatus === 'Paid' ? 'badge-green' : 'badge-amber'}`}>{r.paymentStatus}</span></td>
+                <td>
+                  <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+                    <span className={`badge ${r.paymentStatus === 'Paid' ? 'badge-green' : 'badge-amber'}`}>{r.paymentStatus}</span>
+                    {r.paymentStatus !== 'Paid' && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        disabled={updatingId === r.id}
+                        onClick={() => markPaid(r)}
+                      >
+                        Mark as paid
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td><span className={`badge ${badgeFor(r.status)}`}>{label(r.status)}</span></td>
                 <td className="muted" style={{ fontSize: '.82rem', whiteSpace: 'nowrap' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
                 <td>

@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, ArrowLeft, Receipt } from 'lucide-react'
 import api from '../../api/client'
 import Invoice from '../../components/Invoice'
+
+const RECENT_COUNT = 10
 
 const badgeFor = (status) => {
   if (status === 'Delivered') return 'badge-green'
@@ -13,15 +15,27 @@ const label = (s) => (s || '').replace(/([a-z])([A-Z])/g, '$1 $2')
 
 export default function Invoices() {
   const [q, setQ] = useState('')
+  const [recent, setRecent] = useState(null)
   const [results, setResults] = useState(null)
   const [error, setError] = useState('')
   const [searching, setSearching] = useState(false)
   const [selected, setSelected] = useState(null)
 
+  // Recently created invoices, shown by default before the admin searches
+  // for anything — orders are already newest-first from the API.
+  useEffect(() => {
+    api.get('/admin/orders')
+      .then(({ data }) => setRecent(data.slice(0, RECENT_COUNT)))
+      .catch(() => {})
+  }, [])
+
   const search = async (e) => {
     e?.preventDefault()
     const term = q.trim()
-    if (!term) return
+    if (!term) {
+      setResults(null)
+      return
+    }
     setSearching(true); setError(''); setSelected(null)
     try {
       const { data } = await api.get('/admin/invoices/search', { params: { q: term } })
@@ -32,6 +46,8 @@ export default function Invoices() {
       setSearching(false)
     }
   }
+
+  const shown = results ?? recent
 
   if (selected) {
     return (
@@ -65,21 +81,25 @@ export default function Invoices() {
 
       {error && <div className="alert-error" style={{ marginTop: 14 }}>{error}</div>}
 
-      {results && (
-        results.length === 0 ? (
+      {shown && (
+        shown.length === 0 ? (
           <div className="empty" style={{ marginTop: 18 }}>
             <Receipt size={28} color="var(--ink-soft)" />
             <h3>No matching invoices</h3>
             <p className="muted">Try the exact order number, or a different mobile/email.</p>
           </div>
         ) : (
-          <div className="table-wrap" style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 16 }}>
+            <p className="muted" style={{ marginTop: 0, fontSize: '.85rem' }}>
+              {results ? `${results.length} result(s).` : `Showing the ${shown.length} most recent invoices.`}
+            </p>
+            <div className="table-wrap">
             <table>
               <thead>
                 <tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th><th></th></tr>
               </thead>
               <tbody>
-                {results.map((r) => (
+                {shown.map((r) => (
                   <tr key={r.id}>
                     <td style={{ fontWeight: 600 }}>{r.orderNumber}</td>
                     <td>{r.customerName}<br /><span className="muted" style={{ fontSize: '.8rem' }}>{r.customerPhone}{r.customerEmail ? ` · ${r.customerEmail}` : ''}</span></td>
@@ -91,6 +111,7 @@ export default function Invoices() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )
       )}

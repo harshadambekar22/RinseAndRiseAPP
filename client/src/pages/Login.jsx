@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
+import { imageUrl } from '../api/client'
 import Icon from '../components/Icon'
 import LoadingOverlay from '../components/LoadingOverlay'
 import GoogleLoginButton from '../components/GoogleLoginButton'
@@ -15,7 +16,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default function Login() {
   const { login, loginWithGoogle } = useAuth()
-  const { projectIcon, googleClientId, googleSignInEnabled } = useSettings()
+  const { projectIcon, projectLogo, googleClientId, googleSignInEnabled } = useSettings()
   const GOOGLE_ENABLED = googleSignInEnabled && !!googleClientId
   const navigate = useNavigate()
   const location = useLocation()
@@ -52,7 +53,9 @@ export default function Login() {
   return (
     <main className="container page">
       <div className="auth-card">
-        <div className="auth-mark"><Icon name={projectIcon} size={22} /></div>
+        <div className="auth-mark">
+          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={22} />}
+        </div>
         <h1>Welcome back</h1>
         <p className="muted">Sign in to schedule pickups and track your orders.</p>
 
@@ -98,9 +101,6 @@ export default function Login() {
 
         <p className="muted center" style={{ marginTop: 18 }}>
           New here? <Link to="/register" state={location.state}>Create an account</Link>
-        </p>
-        <p className="muted center" style={{ fontSize: '.78rem', marginTop: 6 }}>
-          Admin demo: admin@rinserise.local / Admin@123
         </p>
       </div>
 

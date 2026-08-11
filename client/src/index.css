@@ -503,7 +503,7 @@ td.num { font-variant-numeric: tabular-nums; }
 /* ---- Auth pages ---- */
 .auth-card { max-width: 440px; margin: 8px auto; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(22px, 4vw, 34px); box-shadow: var(--shadow-md); }
 .auth-card h1 { margin: 14px 0 4px; }
-.auth-mark { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); box-shadow: var(--shadow-sm); }
+.auth-mark { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); box-shadow: var(--shadow-sm); overflow: hidden; }
 .stack-sm { display: grid; gap: 12px; }
 .google-wrap { display: flex; justify-content: center; }
 .divider-or { display: flex; align-items: center; text-align: center; gap: 12px; color: var(--ink-soft); margin: 18px 0; font-size: .82rem; }
