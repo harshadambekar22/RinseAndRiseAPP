@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RinseRise.Api.Data;
 
@@ -10,9 +11,11 @@ using RinseRise.Api.Data;
 namespace RinseRise.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260721120000_AddOrderDiscountFields")]
+    partial class AddOrderDiscountFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -523,9 +526,6 @@ namespace RinseRise.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("BillSentAt")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Channel")
                         .HasColumnType("INTEGER");
 
@@ -557,11 +557,6 @@ namespace RinseRise.Api.Migrations
                     b.Property<string>("OrderNumber")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PaymentProvider")
-                        .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("PaymentStatus")
@@ -779,16 +774,6 @@ namespace RinseRise.Api.Migrations
                         new
                         {
                             Key = "PickupSchedulingEnabled",
-                            Value = "false"
-                        },
-                        new
-                        {
-                            Key = "SendBillEnabled",
-                            Value = "true"
-                        },
-                        new
-                        {
-                            Key = "PayAtPickupEnabled",
                             Value = "false"
                         },
                         new

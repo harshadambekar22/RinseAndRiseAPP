@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 
 const AuthContext = createContext(null)
@@ -7,6 +8,7 @@ export const useAuth = () => useContext(AuthContext)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [ready, setReady] = useState(false)
+  const navigate = useNavigate()
 
   // Restore the session from localStorage on first load.
   useEffect(() => {
@@ -16,6 +18,19 @@ export function AuthProvider({ children }) {
     }
     setReady(true)
   }, [])
+
+  // api/client.js clears localStorage and fires this when a request comes
+  // back 401 with an expired/invalid token. Drop the in-memory user too and
+  // bounce to login with a message, instead of leaving a "logged in" UI
+  // that just fails every request.
+  useEffect(() => {
+    const onSessionExpired = () => {
+      setUser(null)
+      navigate('/login', { replace: true, state: { sessionExpired: true } })
+    }
+    window.addEventListener('auth:session-expired', onSessionExpired)
+    return () => window.removeEventListener('auth:session-expired', onSessionExpired)
+  }, [navigate])
 
   const persist = (data) => {
     // data = { token, userId, name, email, role }

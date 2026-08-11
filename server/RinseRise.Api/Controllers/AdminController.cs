@@ -16,11 +16,10 @@ public class AdminController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly IOrderService _orders;
-    private readonly INotificationService _notify;
 
-    public AdminController(AppDbContext db, IOrderService orders, INotificationService notify)
+    public AdminController(AppDbContext db, IOrderService orders)
     {
-        _db = db; _orders = orders; _notify = notify;
+        _db = db; _orders = orders;
     }
 
     /// <summary>Top-of-dashboard summary cards.</summary>
@@ -52,6 +51,17 @@ public class AdminController : ControllerBase
     [HttpGet("transactions")]
     public async Task<ActionResult<List<OrderViewDto>>> Transactions() =>
         Ok(await _orders.GetAllAsync());
+
+    /// <summary>All orders for the Orders management grid (sort/filter/status update
+    /// happen client-side; status changes go through PUT /orders/{id}/status).</summary>
+    [HttpGet("orders")]
+    public async Task<ActionResult<List<OrderViewDto>>> Orders() =>
+        Ok(await _orders.GetAllAsync());
+
+    /// <summary>Invoice search by order number, mobile number, or account email.</summary>
+    [HttpGet("invoices/search")]
+    public async Task<ActionResult<List<OrderViewDto>>> SearchInvoices([FromQuery] string q) =>
+        Ok(await _orders.SearchAsync(q));
 
     /// <summary>All registered customers and their order counts.</summary>
     [HttpGet("users")]
@@ -115,7 +125,7 @@ public class AdminController : ControllerBase
         try
         {
             var order = await _orders.CreateShopOrderAsync(dto);
-            var delivery = await _notify.SendBillAsync(order, preferWhatsApp: dto.SendWhatsApp);
+            var delivery = await _orders.SendBillIfDueAsync(order.Id, preferWhatsApp: dto.SendWhatsApp);
             return Ok(new { order, notification = delivery });
         }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
@@ -127,7 +137,16 @@ public class AdminController : ControllerBase
     {
         var order = await _orders.GetByIdAsync(id);
         if (order is null) return NotFound();
-        var delivery = await _notify.SendBillAsync(order, preferWhatsApp: whatsapp);
+        var delivery = await _orders.SendBillIfDueAsync(id, preferWhatsApp: whatsapp, force: true);
         return Ok(new { notification = delivery });
+    }
+
+    /// <summary>Admin reconciles a Pending order (e.g. pay-at-pickup, or cash collected
+    /// on delivery) as paid.</summary>
+    [HttpPost("orders/{id:int}/mark-paid")]
+    public async Task<IActionResult> MarkPaid(int id)
+    {
+        var order = await _orders.MarkPaidAsync(id);
+        return order is null ? NotFound() : Ok(order);
     }
 }

@@ -17,6 +17,9 @@ public class Setting
 public static class SettingKeys
 {
     public const string PickupSchedulingEnabled = "PickupSchedulingEnabled";
+    public const string SendBillEnabled = "SendBillEnabled";
+    public const string PayAtPickupEnabled = "PayAtPickupEnabled";
+    public const string GoogleSignInEnabled = "GoogleSignInEnabled";
     public const string BusinessPhone = "BusinessPhone";
     public const string HomeHeadline = "HomeHeadline";
 
@@ -46,6 +49,7 @@ public static class SettingKeys
     public const string GoogleClientId = "GoogleClientId";
     public const string RazorpayKeyId = "RazorpayKeyId";
     public const string RazorpayKeySecret = "RazorpayKeySecret";
+    public const string RazorpayWebhookSecret = "RazorpayWebhookSecret";
     public const string TwilioAccountSid = "TwilioAccountSid";
     public const string TwilioAuthToken = "TwilioAuthToken";
     public const string TwilioWhatsAppFrom = "TwilioWhatsAppFrom";

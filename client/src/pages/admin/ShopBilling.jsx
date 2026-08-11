@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Smartphone, CreditCard, QrCode, Monitor, Banknote, Send, CheckCircle2, RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Smartphone, CreditCard, QrCode, Monitor, Banknote, Send, CheckCircle2, RotateCcw, Store, Truck, MapPin } from 'lucide-react'
 import api from '../../api/client'
 import { useSettings } from '../../context/SettingsContext'
+import AddressMapPicker, { DEFAULT_CENTER } from '../../components/AddressMapPicker'
+import { useForwardGeocode } from '../../hooks/useForwardGeocode'
+import { usePincodeLookup } from '../../hooks/usePincodeLookup'
 
 const TAX_RATE = 0.18
 const FALLBACK = [
@@ -21,8 +24,13 @@ const METHODS = [
   { key: 'cash', label: 'Cash', Icon: Banknote },
 ]
 
+const DELIVERY_METHODS = [
+  { key: 'WalkIn',       label: 'Walk-In',       Icon: Store },
+  { key: 'DoorDelivery', label: 'Door Delivery', Icon: Truck },
+]
+
 export default function ShopBilling() {
-  const { projectName } = useSettings()
+  const { projectName, sendBillEnabled } = useSettings()
   const [catalogue, setCatalogue] = useState([])
   const [qty, setQty] = useState({}) // id -> count
   const [name, setName] = useState('')
@@ -32,6 +40,34 @@ export default function ShopBilling() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+
+  // Delivery option: how the *finished* order gets back to the customer.
+  const [deliveryMethod, setDeliveryMethod] = useState('WalkIn')
+  const [deliveryForm, setDeliveryForm] = useState({ line1: '', line2: '', city: '', state: '', pincode: '' })
+  const [deliveryMarker, setDeliveryMarker] = useState(DEFAULT_CENTER)
+  const forwardGeocode = useForwardGeocode(useCallback((lat, lng) => setDeliveryMarker({ lat, lng }), []))
+
+  // Pincode -> city/state autofill, via India Post's official PIN code API
+  // (far more reliable for names than the map geocoder). Bypasses
+  // updateDelivery() so it can't re-trigger itself.
+  const pincodeLookup = usePincodeLookup(useCallback((info) => {
+    setDeliveryForm((f) => ({ ...f, city: info.city || f.city, state: info.state || f.state }))
+  }, []))
+
+  const updateDelivery = (k, v) => {
+    const next = { ...deliveryForm, [k]: v }
+    setDeliveryForm(next)
+    if (k === 'pincode') pincodeLookup.lookup(v)
+    // Fire once there's a 6-digit pincode — don't also require line1 (the
+    // flat/building line), since that would silently block geocoding
+    // whenever it's left blank.
+    if (next.pincode.trim().length === 6 || (next.line2.trim() && next.city.trim())) {
+      forwardGeocode.search({
+        street: [next.line1, next.line2].filter(Boolean).join(', '),
+        area: next.line2, city: next.city, state: next.state, postalcode: next.pincode,
+      })
+    }
+  }
 
   useEffect(() => {
     api.get('/clothtypes')
@@ -53,7 +89,9 @@ export default function ShopBilling() {
   const total = subtotal + tax
   const itemCount = lines.reduce((n, l) => n + l.qty, 0)
 
-  const canSubmit = itemCount > 0 && name.trim() && phone.trim().length >= 6 && !submitting
+  const deliveryReady = deliveryMethod !== 'DoorDelivery'
+    || (deliveryForm.line1.trim() && deliveryForm.city.trim() && deliveryForm.pincode.trim())
+  const canSubmit = itemCount > 0 && name.trim() && phone.trim().length >= 6 && deliveryReady && !submitting
 
   const submit = async () => {
     setError(''); setSubmitting(true)
@@ -63,8 +101,14 @@ export default function ShopBilling() {
         customerName: name.trim(),
         customerPhone: phone.trim(),
         paymentMethod: method,
-        sendWhatsApp,
+        sendWhatsApp: sendBillEnabled && sendWhatsApp,
         notes: null,
+        deliveryMethod,
+        deliveryAddress: deliveryMethod === 'DoorDelivery' ? {
+          label: 'Delivery', line1: deliveryForm.line1, line2: deliveryForm.line2,
+          city: deliveryForm.city, state: deliveryForm.state, pincode: deliveryForm.pincode,
+          latitude: deliveryMarker.lat, longitude: deliveryMarker.lng,
+        } : null,
       }
       const { data } = await api.post('/admin/shop-billing', payload)
       setResult(data) // { order, notification }
@@ -73,7 +117,10 @@ export default function ShopBilling() {
     } finally { setSubmitting(false) }
   }
 
-  const reset = () => { setQty({}); setName(''); setPhone(''); setMethod('upi'); setSendWhatsApp(true); setResult(null); setError('') }
+  const reset = () => {
+    setQty({}); setName(''); setPhone(''); setMethod('upi'); setSendWhatsApp(true); setResult(null); setError('')
+    setDeliveryMethod('WalkIn'); setDeliveryForm({ line1: '', line2: '', city: '', state: '', pincode: '' }); setDeliveryMarker(DEFAULT_CENTER)
+  }
 
   // ---- After a bill is generated: show the invoice + delivery status ----
   if (result) {
@@ -111,6 +158,12 @@ export default function ShopBilling() {
               <div className="t"><span>Tax</span><span>₹{o.taxAmount.toFixed(2)}</span></div>
               <div className="grand"><span style={{ display:'flex', justifyContent:'space-between', width:'100%' }}><span>Total</span><span>₹{o.total.toFixed(2)}</span></span></div>
             </div>
+
+            {o.pickupAddressText && (
+              <p className="muted" style={{ fontSize: '.84rem', marginTop: 14, display: 'flex', gap: 6 }}>
+                <MapPin size={15} style={{ flexShrink: 0, marginTop: 2 }} /> Door delivery to: {o.pickupAddressText}
+              </p>
+            )}
           </div>
         </div>
       </>
@@ -171,11 +224,82 @@ export default function ShopBilling() {
               ))}
             </div>
 
-            <label className="row" style={{ marginTop: 16, gap: 10, cursor: 'pointer', userSelect: 'none' }}>
-              <input type="checkbox" checked={sendWhatsApp} onChange={(e) => setSendWhatsApp(e.target.checked)} />
-              <span style={{ fontSize: '.9rem' }}>Send bill to customer's WhatsApp (falls back to SMS)</span>
+            <label style={{ fontSize: '.82rem', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginTop: 16 }}>
+              Delivery option
             </label>
+            <p className="muted" style={{ margin: '2px 0 8px', fontSize: '.8rem' }}>
+              How should the customer get their cleaned clothes back?
+            </p>
+            <div className="chip-row">
+              {DELIVERY_METHODS.map(({ key, label, Icon }) => (
+                <button key={key} type="button" className={`chip ${deliveryMethod === key ? 'active' : ''}`} onClick={() => setDeliveryMethod(key)}>
+                  <Icon size={15} /> {label}
+                </button>
+              ))}
+            </div>
+
+            {sendBillEnabled && (
+              <label className="row" style={{ marginTop: 16, gap: 10, cursor: 'pointer', userSelect: 'none' }}>
+                <input type="checkbox" checked={sendWhatsApp} onChange={(e) => setSendWhatsApp(e.target.checked)} />
+                <span style={{ fontSize: '.9rem' }}>Send bill to customer's WhatsApp (falls back to SMS)</span>
+              </label>
+            )}
           </div>
+
+          {deliveryMethod === 'DoorDelivery' && (
+            <div className="panel">
+              <div className="row" style={{ marginBottom: 12 }}>
+                <MapPin size={18} color="var(--primary-deep)" />
+                <strong style={{ fontFamily: 'var(--font-display)' }}>Delivery address</strong>
+              </div>
+
+              <div className="field">
+                <label>Flat / House no, building *</label>
+                <input className="input" value={deliveryForm.line1} onChange={(e) => updateDelivery('line1', e.target.value)} placeholder="12A, Lake View Apartments" />
+              </div>
+              <div className="field">
+                <label>Street / Area</label>
+                <input className="input" value={deliveryForm.line2} onChange={(e) => updateDelivery('line2', e.target.value)} placeholder="RS Puram" />
+              </div>
+              <div className="grid-2">
+                <div className="field">
+                  <label>City *</label>
+                  <input className="input" value={deliveryForm.city} onChange={(e) => updateDelivery('city', e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>State</label>
+                  <input className="input" value={deliveryForm.state} onChange={(e) => updateDelivery('state', e.target.value)} />
+                </div>
+              </div>
+              <div className="field">
+                <label>Pincode *</label>
+                <input className="input" inputMode="numeric" maxLength={6} value={deliveryForm.pincode} onChange={(e) => updateDelivery('pincode', e.target.value)} />
+                {pincodeLookup.status === 'looking' && (
+                  <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Looking up city/state…</p>
+                )}
+                {pincodeLookup.status === 'notfound' && (
+                  <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                    Couldn't recognise that pincode — please fill city/state in yourself.
+                  </p>
+                )}
+              </div>
+
+              <AddressMapPicker marker={deliveryMarker} onSetPin={setDeliveryMarker} />
+              {forwardGeocode.status === 'looking' && (
+                <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>Finding this address on the map…</p>
+              )}
+              {forwardGeocode.status === 'notfound' && (
+                <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                  Couldn't find that exact address on the map — drag the pin to the right spot.
+                </p>
+              )}
+              {forwardGeocode.status === 'failed' && (
+                <p className="muted" style={{ fontSize: '.8rem', margin: '4px 0 0' }}>
+                  Couldn't look up that address right now — drag the pin to the right spot instead.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <aside className="order-summary-sticky">

@@ -1,21 +1,21 @@
 using System.IO;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace RinseRise.Api.Controllers;
 
-/// <summary>Accepts an image (e.g. an offer pamphlet) and saves it under
-/// wwwroot/uploads, returning a relative URL to store and display.</summary>
+/// <summary>Accepts an image (e.g. an offer pamphlet) and saves it under the
+/// configured uploads directory (see Uploads:Directory / UploadsOptions in
+/// Program.cs), returning a relative URL to store and display.</summary>
 [ApiController]
 [Route("api/admin/uploads")]
 [Authorize(Roles = "Admin")]
 public class UploadsController : ControllerBase
 {
-    private readonly IWebHostEnvironment _env;
-    public UploadsController(IWebHostEnvironment env) => _env = env;
+    private readonly UploadsOptions _uploads;
+    public UploadsController(UploadsOptions uploads) => _uploads = uploads;
 
     [HttpPost]
     [RequestSizeLimit(6_000_000)] // ~6 MB
@@ -29,12 +29,10 @@ public class UploadsController : ControllerBase
         if (!allowed.Contains(ext))
             return BadRequest(new { message = "Only image files (jpg, png, webp, gif) are allowed." });
 
-        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-        var dir = Path.Combine(webRoot, "uploads");
-        Directory.CreateDirectory(dir);
+        Directory.CreateDirectory(_uploads.Directory);
 
         var name = $"{System.Guid.NewGuid():N}{ext}";
-        await using (var stream = System.IO.File.Create(Path.Combine(dir, name)))
+        await using (var stream = System.IO.File.Create(Path.Combine(_uploads.Directory, name)))
             await file.CopyToAsync(stream);
 
         return Ok(new { url = $"/uploads/{name}" });

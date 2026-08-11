@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, LayoutDashboard, Sun, Moon } from 'lucide-react'
+import { LogOut, LayoutDashboard, PackageSearch, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useSettings } from '../context/SettingsContext'
@@ -42,12 +42,14 @@ export default function Navbar() {
           <span className="brand-mark">
             {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={18} />}
           </span>
-          {projectName}
+          <span className="brand-name">{projectName}</span>
         </Link>
 
         <nav className="nav-links">
-          {!isAdminArea && <NavLink to="/order">Book a pickup</NavLink>}
-          {!isAdminArea && isAuthed && <NavLink to="/orders">My orders</NavLink>}
+          {/* Admins only get the Admin dashboard link — the customer ordering
+              flow (Book a pickup / My orders) isn't relevant to them. */}
+          {!isAdmin && !isAdminArea && <NavLink to="/order">Book a pickup</NavLink>}
+          {!isAdmin && !isAdminArea && isAuthed && <NavLink to="/orders">My orders</NavLink>}
           {isAdmin && <NavLink to="/admin">Admin</NavLink>}
         </nav>
 
@@ -70,6 +72,15 @@ export default function Navbar() {
               {isAdmin && (
                 <Link to="/admin" className="btn btn-ghost btn-sm" title="Admin">
                   <LayoutDashboard size={16} />
+                </Link>
+              )}
+              {/* nav-links (which has a text "My orders" link) is hidden below
+                  900px, so mobile users need another way in — this compact
+                  icon-only link is hidden again at 900px+ via CSS to avoid
+                  showing the same destination twice. */}
+              {!isAdmin && !isAdminArea && (
+                <Link to="/orders" className="btn btn-ghost btn-sm nav-mobile-link" title="My orders" aria-label="My orders">
+                  <PackageSearch size={16} />
                 </Link>
               )}
               <span className="avatar" title={user.name}>{initials}</span>

@@ -1,8 +1,9 @@
 import LoadingIcon from '../components/LoadingIcon'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PackageOpen, Plus } from 'lucide-react'
+import { PackageOpen, Plus, Receipt, XCircle } from 'lucide-react'
 import api from '../api/client'
+import InvoiceModal from '../components/InvoiceModal'
 
 const badgeFor = (status) => {
   if (status === 'Delivered') return 'badge-green'
@@ -15,12 +16,23 @@ const label = (s) => s.replace(/([a-z])([A-Z])/g, '$1 $2')
 export default function MyOrders() {
   const [orders, setOrders] = useState(null)
   const [error, setError] = useState('')
+  const [invoiceOrder, setInvoiceOrder] = useState(null)
 
   useEffect(() => {
     api.get('/orders/mine')
       .then(({ data }) => setOrders(data))
       .catch(() => setError('We could not load your orders.'))
   }, [])
+
+  const cancelOrder = async (id) => {
+    if (!confirm('Cancel this order?')) return
+    try {
+      const { data } = await api.post(`/orders/${id}/cancel`)
+      setOrders((os) => os.map((o) => (o.id === id ? data : o)))
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Could not cancel this order.')
+    }
+  }
 
   if (error) return <main className="container page"><div className="alert-error">{error}</div></main>
   if (!orders) return <main className="container page"><div className="loading-wrap"><LoadingIcon /><span>Loading your orders…</span></div></main>
@@ -54,12 +66,22 @@ export default function MyOrders() {
               </div>
               <div className="row" style={{ gap: 12 }}>
                 <span className={`badge ${badgeFor(o.status)}`}>{label(o.status)}</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => setInvoiceOrder(o)}>
+                  <Receipt size={15} /> Invoice
+                </button>
                 <Link to={`/track/${o.id}`} className="btn btn-ghost btn-sm">Track</Link>
+                {o.status === 'PickupScheduled' && (
+                  <button className="btn btn-ghost btn-sm danger" onClick={() => cancelOrder(o.id)}>
+                    <XCircle size={15} /> Cancel
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />
     </main>
   )
 }

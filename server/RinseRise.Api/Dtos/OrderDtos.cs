@@ -19,28 +19,35 @@ public record AddressInputDto(
 public record CreateOrderDto(
     [Required, MinLength(1)] List<OrderItemInputDto> Items,
     AddressInputDto? PickupAddress,
+    int? AddressId,
     DateTime? ScheduledPickupAt,
-    string? Notes);
+    string? Notes,
+    string PaymentMethod = "Online"); // Online | PayAtPickup
 
 public record UpdateStatusDto([Required] string Status);
 
 // --- Read models returned to the client ---
 
-public record OrderItemViewDto(int ClothTypeId, string Name, decimal UnitPrice, int Quantity, decimal LineTotal);
+public record OrderItemViewDto(
+    int ClothTypeId, string Name, decimal OriginalUnitPrice, decimal UnitPrice,
+    int Quantity, decimal LineTotal, decimal LineDiscount);
 
 public record OrderViewDto(
     int Id,
     string OrderNumber,
     string CustomerName,
     string CustomerPhone,
+    string? CustomerEmail,
     string Channel,
     string Status,
     string PaymentStatus,
     decimal SubTotal,
+    decimal DiscountTotal,
     decimal TaxAmount,
     decimal DeliveryFee,
     decimal Total,
     string? PickupAddressText,
     DateTime? ScheduledPickupAt,
     DateTime CreatedAt,
-    List<OrderItemViewDto> Items);
+    List<OrderItemViewDto> Items,
+    string PaymentProvider);

@@ -57,6 +57,11 @@ public class SettingsService : ISettingsService
 
     public async Task<PublicSettingsDto> GetPublicAsync() => new(
         await GetBoolAsync(SettingKeys.PickupSchedulingEnabled),
+        await GetBoolAsync(SettingKeys.SendBillEnabled, true),
+        await GetBoolAsync(SettingKeys.PayAtPickupEnabled),
+        // Defaults to on so sites that already have a Google client id
+        // configured keep working after this flag is introduced.
+        await GetBoolAsync(SettingKeys.GoogleSignInEnabled, true),
         await GetAsync(SettingKeys.BusinessPhone) ?? string.Empty,
         await GetAsync(SettingKeys.HomeHeadline) ?? "Fresh clothes, without the trip.",
         await GetAsync(SettingKeys.ProjectName) ?? "Rinse & Rise",

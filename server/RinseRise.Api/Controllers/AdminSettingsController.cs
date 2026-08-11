@@ -31,6 +31,12 @@ public class AdminSettingsController : ControllerBase
 
         if (dto.PickupSchedulingEnabled.HasValue)
             await _settings.SetAsync(SettingKeys.PickupSchedulingEnabled, dto.PickupSchedulingEnabled.Value ? "true" : "false");
+        if (dto.SendBillEnabled.HasValue)
+            await _settings.SetAsync(SettingKeys.SendBillEnabled, dto.SendBillEnabled.Value ? "true" : "false");
+        if (dto.PayAtPickupEnabled.HasValue)
+            await _settings.SetAsync(SettingKeys.PayAtPickupEnabled, dto.PayAtPickupEnabled.Value ? "true" : "false");
+        if (dto.GoogleSignInEnabled.HasValue)
+            await _settings.SetAsync(SettingKeys.GoogleSignInEnabled, dto.GoogleSignInEnabled.Value ? "true" : "false");
         if (dto.BusinessPhone is not null)
             await _settings.SetAsync(SettingKeys.BusinessPhone, dto.BusinessPhone);
         if (dto.Headline is not null)

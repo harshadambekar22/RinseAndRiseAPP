@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { GoogleLogin } from '@react-oauth/google'
 import { UserPlus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
 import Icon from '../components/Icon'
+import GoogleLoginButton from '../components/GoogleLoginButton'
 
 export default function Register() {
   const { register, loginWithGoogle } = useAuth()
-  const { projectIcon, googleClientId } = useSettings()
-  const GOOGLE_ENABLED = !!googleClientId
+  const { projectIcon, googleClientId, googleSignInEnabled } = useSettings()
+  const GOOGLE_ENABLED = googleSignInEnabled && !!googleClientId
   const navigate = useNavigate()
   const location = useLocation()
   const redirectTo = location.state?.from || '/'
@@ -81,7 +81,7 @@ export default function Register() {
           <>
             <div className="divider-or"><span>or</span></div>
             <div className="google-wrap">
-              <GoogleLogin onSuccess={onGoogle} onError={() => setError('Google sign-up failed.')} width="320" text="signup_with" />
+              <GoogleLoginButton onSuccess={onGoogle} onError={() => setError('Google sign-up failed.')} text="signup_with" />
             </div>
           </>
         )}

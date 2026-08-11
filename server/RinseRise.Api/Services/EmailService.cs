@@ -51,23 +51,36 @@ public class EmailService : IEmailService
             return "logged (add SMTP keys under Admin → API Keys to deliver for real)";
         }
 
-        using var message = new MailMessage
+        // A misconfigured key (bad host/credentials/from-address) shouldn't 500
+        // the forgot-password endpoint — that would leak which emails are
+        // registered (a 500 only happens for real accounts) and just breaks
+        // the flow for everyone. Log it so the admin can diagnose delivery
+        // issues from the server console, but always let the caller proceed.
+        try
         {
-            From = new MailAddress(fromEmail, string.IsNullOrWhiteSpace(fromName) ? projectName : fromName),
-            Subject = subject,
-            Body = html,
-            IsBodyHtml = true,
-        };
-        message.To.Add(toEmail);
+            using var message = new MailMessage
+            {
+                From = new MailAddress(fromEmail, string.IsNullOrWhiteSpace(fromName) ? projectName : fromName),
+                Subject = subject,
+                Body = html,
+                IsBodyHtml = true,
+            };
+            message.To.Add(toEmail);
 
-        var port = int.TryParse(portRaw, out var parsedPort) ? parsedPort : 587;
-        using var client = new SmtpClient(host, port)
+            var port = int.TryParse(portRaw, out var parsedPort) ? parsedPort : 587;
+            using var client = new SmtpClient(host, port)
+            {
+                Credentials = new NetworkCredential(username, password),
+                EnableSsl = true,
+            };
+            await client.SendMailAsync(message);
+            return "sent";
+        }
+        catch (Exception ex)
         {
-            Credentials = new NetworkCredential(username, password),
-            EnableSsl = true,
-        };
-        await client.SendMailAsync(message);
-        return "sent";
+            _log.LogError(ex, "Failed to send password reset email to {To} via {Host}:{Port}", toEmail, host, portRaw);
+            return $"failed: {ex.Message}";
+        }
     }
 
     // Table-based layout with every style inlined — the only markup that

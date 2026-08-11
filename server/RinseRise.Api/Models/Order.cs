@@ -29,6 +29,11 @@ public class Order
     public decimal SubTotal { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal DeliveryFee { get; set; }
+
+    /// <summary>Total amount saved across all lines vs. undiscounted catalogue
+    /// prices — shown on the invoice, doesn't affect Total (already baked into
+    /// each line's UnitPrice).</summary>
+    public decimal DiscountTotal { get; set; }
     public decimal Total { get; set; }
 
     // Pickup / drop scheduling
@@ -41,6 +46,16 @@ public class Order
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
     public string? RazorpayOrderId { get; set; }
     public string? RazorpayPaymentId { get; set; }
+
+    /// <summary>How this order's payment was set up: "Razorpay", "Counter", or
+    /// "PayAtPickup" — lets the client distinguish a deliberate pay-at-pickup
+    /// order from an abandoned/failed online checkout without joining Payments.</summary>
+    [MaxLength(20)]
+    public string PaymentProvider { get; set; } = "Razorpay";
+
+    /// <summary>Idempotency guard so the WhatsApp bill isn't sent twice when both
+    /// the client-driven /verify call and the Razorpay webhook settle one payment.</summary>
+    public DateTime? BillSentAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

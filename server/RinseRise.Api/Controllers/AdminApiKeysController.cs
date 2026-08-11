@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using RinseRise.Api.Dtos;
 using RinseRise.Api.Models;
 using RinseRise.Api.Services;
@@ -29,6 +30,7 @@ public class AdminApiKeysController : ControllerBase
         if (dto.GoogleClientId is not null) await _settings.SetAsync(SettingKeys.GoogleClientId, dto.GoogleClientId);
         if (dto.RazorpayKeyId is not null) await _settings.SetAsync(SettingKeys.RazorpayKeyId, dto.RazorpayKeyId);
         if (dto.RazorpayKeySecret is not null) await _settings.SetAsync(SettingKeys.RazorpayKeySecret, dto.RazorpayKeySecret);
+        if (dto.RazorpayWebhookSecret is not null) await _settings.SetAsync(SettingKeys.RazorpayWebhookSecret, dto.RazorpayWebhookSecret);
         if (dto.TwilioAccountSid is not null) await _settings.SetAsync(SettingKeys.TwilioAccountSid, dto.TwilioAccountSid);
         if (dto.TwilioAuthToken is not null) await _settings.SetAsync(SettingKeys.TwilioAuthToken, dto.TwilioAuthToken);
         if (dto.TwilioWhatsAppFrom is not null) await _settings.SetAsync(SettingKeys.TwilioWhatsAppFrom, dto.TwilioWhatsAppFrom);
@@ -37,9 +39,21 @@ public class AdminApiKeysController : ControllerBase
         if (dto.SmtpPort is not null) await _settings.SetAsync(SettingKeys.SmtpPort, dto.SmtpPort);
         if (dto.SmtpUsername is not null) await _settings.SetAsync(SettingKeys.SmtpUsername, dto.SmtpUsername);
         if (dto.SmtpPassword is not null) await _settings.SetAsync(SettingKeys.SmtpPassword, dto.SmtpPassword);
-        if (dto.SmtpFromEmail is not null) await _settings.SetAsync(SettingKeys.SmtpFromEmail, dto.SmtpFromEmail);
+        if (dto.SmtpFromEmail is not null)
+        {
+            var fromEmail = dto.SmtpFromEmail.Trim();
+            if (fromEmail.Length > 0 && !IsValidEmail(fromEmail))
+                return BadRequest("SmtpFromEmail must be a valid email address, e.g. no-reply@yourdomain.com.");
+            await _settings.SetAsync(SettingKeys.SmtpFromEmail, fromEmail);
+        }
         if (dto.SmtpFromName is not null) await _settings.SetAsync(SettingKeys.SmtpFromName, dto.SmtpFromName);
         return Ok(await BuildResponse());
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        try { _ = new MailAddress(email); return true; }
+        catch (FormatException) { return false; }
     }
 
     private async Task<ApiKeysResponseDto> BuildResponse()
@@ -52,6 +66,7 @@ public class AdminApiKeysController : ControllerBase
             await _settings.GetAsync(SettingKeys.GoogleClientId) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.RazorpayKeyId) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.RazorpayKeySecret) ?? string.Empty,
+            await _settings.GetAsync(SettingKeys.RazorpayWebhookSecret) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.TwilioAccountSid) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.TwilioAuthToken) ?? string.Empty,
             await _settings.GetAsync(SettingKeys.TwilioWhatsAppFrom) ?? string.Empty,
@@ -70,6 +85,7 @@ public class AdminApiKeysController : ControllerBase
             await _settings.GetOrConfigAsync(SettingKeys.GoogleClientId, "Google:ClientId"),
             await _settings.GetOrConfigAsync(SettingKeys.RazorpayKeyId, "Razorpay:KeyId"),
             await _settings.GetOrConfigAsync(SettingKeys.RazorpayKeySecret, "Razorpay:KeySecret"),
+            await _settings.GetOrConfigAsync(SettingKeys.RazorpayWebhookSecret, "Razorpay:WebhookSecret"),
             await _settings.GetOrConfigAsync(SettingKeys.TwilioAccountSid, "Notifications:Twilio:AccountSid"),
             await _settings.GetOrConfigAsync(SettingKeys.TwilioAuthToken, "Notifications:Twilio:AuthToken"),
             await _settings.GetOrConfigAsync(SettingKeys.TwilioWhatsAppFrom, "Notifications:Twilio:WhatsAppFrom"),

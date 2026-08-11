@@ -31,13 +31,16 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult<List<OrderViewDto>>> Mine() =>
         Ok(await _orders.GetForUserAsync(CurrentUserId));
 
-    /// <summary>Live tracking for a single order.</summary>
+    /// <summary>Live tracking / invoice detail for a single order. Only the
+    /// order's own customer or an admin may view it.</summary>
     [Authorize]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<OrderViewDto>> GetOne(int id)
     {
         var order = await _orders.GetByIdAsync(id);
-        return order is null ? NotFound() : Ok(order);
+        if (order is null) return NotFound();
+        if (!User.IsInRole("Admin") && !await _orders.IsOwnedByAsync(id, CurrentUserId)) return Forbid();
+        return Ok(order);
     }
 
     /// <summary>Admin advances the order through its lifecycle.</summary>
@@ -48,6 +51,21 @@ public class OrdersController : ControllerBase
         try
         {
             var updated = await _orders.UpdateStatusAsync(id, dto.Status);
+            return updated is null ? NotFound() : Ok(updated);
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    /// <summary>The customer cancels their own order — only while it's still
+    /// waiting for pickup (status "PickupScheduled").</summary>
+    [Authorize]
+    [HttpPost("{id:int}/cancel")]
+    public async Task<ActionResult<OrderViewDto>> Cancel(int id)
+    {
+        if (!User.IsInRole("Admin") && !await _orders.IsOwnedByAsync(id, CurrentUserId)) return Forbid();
+        try
+        {
+            var updated = await _orders.CancelAsync(id);
             return updated is null ? NotFound() : Ok(updated);
         }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }

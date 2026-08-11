@@ -12,8 +12,12 @@ public class OrderItem
     public int ClothTypeId { get; set; }
 
     public string ClothTypeName { get; set; } = string.Empty;
+
+    /// <summary>Catalogue price at the time of order, before any offer discount.</summary>
+    public decimal OriginalUnitPrice { get; set; }
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
 
     public decimal LineTotal => UnitPrice * Quantity;
+    public decimal LineDiscount => (OriginalUnitPrice - UnitPrice) * Quantity;
 }

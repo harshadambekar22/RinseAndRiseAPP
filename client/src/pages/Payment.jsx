@@ -1,7 +1,7 @@
 import LoadingIcon from '../components/LoadingIcon'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, CreditCard, Smartphone, QrCode, Info, ArrowLeft } from 'lucide-react'
+import { ShieldCheck, CreditCard, Smartphone, QrCode, Info, ArrowLeft, Banknote } from 'lucide-react'
 import api from '../api/client'
 import { getCart, clearCart, cartSubtotal, cartCount } from '../data/cart'
 import { useSettings } from '../context/SettingsContext'
@@ -22,11 +22,14 @@ function loadRazorpayScript() {
 
 export default function Payment() {
   const navigate = useNavigate()
-  const { projectName } = useSettings()
+  const { projectName, payAtPickupEnabled } = useSettings()
   const cart = getCart()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('') // friendly progress text
+  // Pay-at-pickup is an admin-wide switch, not a customer choice: when it's on,
+  // online payment is hidden entirely and every order goes through as pay-at-pickup.
+  const payMethod = payAtPickupEnabled ? 'payAtPickup' : 'online'
 
   const subtotal = cartSubtotal(cart)
   const tax = Math.round(subtotal * TAX_RATE * 100) / 100
@@ -42,8 +45,13 @@ export default function Payment() {
       city: cart.address.city, state: cart.address.state, pincode: cart.address.pincode,
       latitude: cart.address.lat || 0, longitude: cart.address.lng || 0,
     },
+    // When the customer picked a saved address, the server re-derives the
+    // pickup fields from its own copy of that row rather than trusting the
+    // pickupAddress snapshot above.
+    addressId: cart.address?.addressId || null,
     scheduledPickupAt: cart.pickupAt || null,
     notes: null,
+    paymentMethod: payMethod === 'payAtPickup' ? 'PayAtPickup' : 'Online',
   })
 
   const verifyAndFinish = async (orderId, payload) => {
@@ -59,6 +67,14 @@ export default function Payment() {
       // 1) Create the order in our system.
       setStatus('Creating your order…')
       const { data: order } = await api.post('/orders', buildOrderPayload())
+
+      // Pay at pickup — the order is placed as-is (Pending), no Razorpay
+      // checkout at all. The invoice/success page shows the "pay at pickup" note.
+      if (payMethod === 'payAtPickup') {
+        clearCart()
+        navigate(`/order/success/${order.id}`, { replace: true })
+        return
+      }
 
       // 2) Ask the backend for a Razorpay order (or a MOCK one if keys aren't set).
       setStatus('Setting up payment…')
@@ -131,6 +147,7 @@ export default function Payment() {
 
       <div className="order-layout">
         <div className="stack">
+          {payMethod === 'online' ? (
           <div className="panel">
             <div className="row" style={{ marginBottom: 12 }}>
               <ShieldCheck size={18} color="var(--primary-deep)" />
@@ -152,13 +169,25 @@ export default function Payment() {
               marks the order paid so you can see the full flow. Add your keys in <code>appsettings.json</code> to take real payments.
             </div>
           </div>
+          ) : (
+          <div className="panel">
+            <div className="row" style={{ marginBottom: 12 }}>
+              <Banknote size={18} color="var(--primary-deep)" />
+              <strong style={{ fontFamily: 'var(--font-display)' }}>Pay at pickup</strong>
+            </div>
+            <p className="muted" style={{ marginTop: 0 }}>
+              We'll place your order now and collect payment (cash, UPI or card) when we
+              come to pick up your clothes.
+            </p>
+          </div>
+          )}
 
           <div className="panel">
             <h3 style={{ marginTop: 0 }}>Pickup</h3>
             {cart.address ? (
               <p className="muted" style={{ margin: 0 }}>
                 {cart.address.label} — {cart.address.line1}{cart.address.line2 ? `, ${cart.address.line2}` : ''}, {cart.address.city} {cart.address.pincode}
-                {cart.pickupAt ? <><br />Scheduled: {new Date(cart.pickupAt).toLocaleString()}</> : null}
+                {cart.pickupAt ? <><br />Scheduled: {new Date(cart.pickupAt).toLocaleDateString()}</> : null}
               </p>
             ) : <p className="muted" style={{ margin: 0 }}>No address set.</p>}
           </div>
@@ -183,7 +212,7 @@ export default function Payment() {
                 <div className="grand"><span style={{ display:'flex', justifyContent:'space-between', width:'100%' }}><span>Total</span><span>₹{total.toFixed(2)}</span></span></div>
               </div>
               <button className="btn btn-accent btn-block" style={{ marginTop: 16 }} disabled={busy} onClick={pay}>
-                {busy ? (status || 'Processing…') : `Pay ₹${total.toFixed(2)}`}
+                {busy ? (status || 'Processing…') : payMethod === 'payAtPickup' ? 'Place order' : `Pay ₹${total.toFixed(2)}`}
               </button>
               {busy && <div className="loading-wrap" style={{ marginTop: 10 }}><LoadingIcon /><span>{status}</span></div>}
             </div>

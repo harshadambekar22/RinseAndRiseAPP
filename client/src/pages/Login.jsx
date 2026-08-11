@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { GoogleLogin } from '@react-oauth/google'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
+import { imageUrl } from '../api/client'
 import Icon from '../components/Icon'
 import LoadingOverlay from '../components/LoadingOverlay'
+import GoogleLoginButton from '../components/GoogleLoginButton'
 
 // Sign-in is often near-instant, which means the loading icon flashes by
 // too fast to notice. Hold the busy state open for at least this long so
@@ -15,8 +16,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default function Login() {
   const { login, loginWithGoogle } = useAuth()
-  const { projectIcon, googleClientId } = useSettings()
-  const GOOGLE_ENABLED = !!googleClientId
+  const { projectIcon, projectLogo, googleClientId, googleSignInEnabled } = useSettings()
+  const GOOGLE_ENABLED = googleSignInEnabled && !!googleClientId
   const navigate = useNavigate()
   const location = useLocation()
   const redirectTo = location.state?.from || '/'
@@ -52,13 +53,20 @@ export default function Login() {
   return (
     <main className="container page">
       <div className="auth-card">
-        <div className="auth-mark"><Icon name={projectIcon} size={22} /></div>
+        <div className="auth-mark">
+          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={22} />}
+        </div>
         <h1>Welcome back</h1>
         <p className="muted">Sign in to schedule pickups and track your orders.</p>
 
         {location.state?.resetSuccess && (
           <div className="alert-success" style={{ marginBottom: 14 }}>
             Password updated. Sign in with your new password.
+          </div>
+        )}
+        {location.state?.sessionExpired && (
+          <div className="alert-error" style={{ marginBottom: 14 }} role="alert">
+            Your session has expired. Please sign in again.
           </div>
         )}
         {error && <div className="alert-error" role="alert">{error}</div>}
@@ -86,16 +94,13 @@ export default function Login() {
           <>
             <div className="divider-or"><span>or</span></div>
             <div className="google-wrap">
-              <GoogleLogin onSuccess={onGoogle} onError={() => setError('Google sign-in failed.')} width="320" />
+              <GoogleLoginButton onSuccess={onGoogle} onError={() => setError('Google sign-in failed.')} />
             </div>
           </>
         )}
 
         <p className="muted center" style={{ marginTop: 18 }}>
           New here? <Link to="/register" state={location.state}>Create an account</Link>
-        </p>
-        <p className="muted center" style={{ fontSize: '.78rem', marginTop: 6 }}>
-          Admin demo: admin@rinserise.local / Admin@123
         </p>
       </div>
 

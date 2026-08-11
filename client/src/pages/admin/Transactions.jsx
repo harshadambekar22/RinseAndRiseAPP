@@ -1,5 +1,6 @@
 import LoadingIcon from '../../components/LoadingIcon'
 import { useEffect, useMemo, useState } from 'react'
+import { Banknote } from 'lucide-react'
 import api from '../../api/client'
 
 const badgeFor = (status) => {
@@ -31,6 +32,11 @@ export default function Transactions() {
       (r.customerPhone || '').includes(t))
   }, [rows, q])
 
+  const markPaid = async (id) => {
+    const { data } = await api.post(`/admin/orders/${id}/mark-paid`)
+    setRows((rs) => rs.map((r) => (r.id === id ? data : r)))
+  }
+
   if (error) return <div className="alert-error">{error}</div>
   if (!rows) return <div className="loading-wrap"><LoadingIcon /><span>Loading transactions…</span></div>
 
@@ -61,7 +67,14 @@ export default function Transactions() {
                 <td><span className="badge badge-grey">{r.channel}</span></td>
                 <td className="num">{r.items.reduce((n, i) => n + i.quantity, 0)}</td>
                 <td className="num">₹{r.total.toFixed(2)}</td>
-                <td><span className={`badge ${r.paymentStatus === 'Paid' ? 'badge-green' : 'badge-amber'}`}>{r.paymentStatus}</span></td>
+                <td>
+                  <span className={`badge ${r.paymentStatus === 'Paid' ? 'badge-green' : 'badge-amber'}`}>{r.paymentStatus}</span>
+                  {r.paymentStatus !== 'Paid' && (
+                    <button className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }} onClick={() => markPaid(r.id)}>
+                      <Banknote size={13} /> Mark paid
+                    </button>
+                  )}
+                </td>
                 <td><span className={`badge ${badgeFor(r.status)}`}>{label(r.status)}</span></td>
                 <td className="muted" style={{ fontSize: '.82rem', whiteSpace: 'nowrap' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
               </tr>
