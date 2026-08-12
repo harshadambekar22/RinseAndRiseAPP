@@ -3,12 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { UserPlus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
+import { imageUrl } from '../api/client'
 import Icon from '../components/Icon'
 import GoogleLoginButton from '../components/GoogleLoginButton'
 
 export default function Register() {
   const { register, loginWithGoogle } = useAuth()
-  const { projectIcon, googleClientId, googleSignInEnabled } = useSettings()
+  const { projectIcon, projectLogo, googleClientId, googleSignInEnabled } = useSettings()
   const GOOGLE_ENABLED = googleSignInEnabled && !!googleClientId
   const navigate = useNavigate()
   const location = useLocation()
@@ -45,7 +46,9 @@ export default function Register() {
   return (
     <main className="container page">
       <div className="auth-card">
-        <div className="auth-mark"><Icon name={projectIcon} size={22} /></div>
+        <div className="auth-mark">
+          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={22} />}
+        </div>
         <h1>Create your account</h1>
         <p className="muted">A few details and you're ready to book your first pickup.</p>
 

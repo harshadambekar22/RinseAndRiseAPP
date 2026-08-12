@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { KeyRound, Mail, ShieldCheck } from 'lucide-react'
 import { useSettings } from '../context/SettingsContext'
 import Icon from '../components/Icon'
-import api from '../api/client'
+import api, { imageUrl } from '../api/client'
 
 // Three steps in one page/URL, rather than three routes — nothing else in
 // the app needs to link into the middle of this flow, and keeping it one
@@ -13,7 +13,7 @@ const STEP_CODE = 2
 const STEP_PASSWORD = 3
 
 export default function ForgotPassword() {
-  const { projectIcon } = useSettings()
+  const { projectIcon, projectLogo } = useSettings()
   const navigate = useNavigate()
 
   const [step, setStep] = useState(STEP_EMAIL)
@@ -76,7 +76,9 @@ export default function ForgotPassword() {
   return (
     <main className="container page">
       <div className="auth-card">
-        <div className="auth-mark"><Icon name={projectIcon} size={22} /></div>
+        <div className="auth-mark">
+          {projectLogo ? <img src={imageUrl(projectLogo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Icon name={projectIcon} size={22} />}
+        </div>
 
         {step === STEP_EMAIL && (
           <>
