@@ -1,0 +1,35 @@
+{
+  "appId": "com.rinserise.app",
+  "appName": "Rinse & Rise",
+  "webDir": "dist",
+  "server": {
+    "url": "https://rinse-and-rise-webapp.up.railway.app",
+    "cleartext": false,
+    "allowNavigation": [
+      "https://rinse-and-rise-webapp.up.railway.app/*",
+      "https://*.razorpay.com/*",
+      "https://api.razorpay.com/*",
+      "https://accounts.google.com/*",
+      "https://*.google.com/*",
+      "https://*.googleapis.com/*",
+      "https://*.gstatic.com/*"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0f0f0f",
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true,
+      "backgroundColor": "#0f0f0f",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0f0f0f"
+    }
+  }
+}

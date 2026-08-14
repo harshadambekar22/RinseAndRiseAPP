@@ -13,6 +13,10 @@ server/RinseRise.Api/wwwroot/uploads/*
 # Node / Vite
 node_modules/
 client/dist/
+# Expo
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
 # Env & secrets
 .env
 .env.local

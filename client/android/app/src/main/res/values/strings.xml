@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Rinse &amp; Rise</string>
+    <string name="title_activity_main">Rinse &amp; Rise</string>
+    <string name="package_name">com.rinserise.app</string>
+    <string name="custom_url_scheme">com.rinserise.app</string>
+</resources>

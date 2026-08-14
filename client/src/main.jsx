@@ -6,7 +6,10 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { SettingsProvider, useSettings } from './context/SettingsContext.jsx'
+import { initNativeShell } from './native.js'
 import './index.css'
+
+initNativeShell()
 
 // The Google client id is admin-editable (Admin → API Keys), so it has to be
 // read from SettingsContext rather than baked in at build time — this small
